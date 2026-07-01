@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 const features = [
   {
     title: "Build smarter surveys",
@@ -77,9 +79,12 @@ export default function Home() {
             <button className="hidden rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-semibold text-slate-200 hover:border-white/25 sm:block">
               🌐 EN
             </button>
-            <button className="rounded-full bg-white px-5 py-2.5 text-sm font-black text-[#050712] hover:bg-blue-100">
+            <Link
+              href="/login"
+              className="rounded-full bg-white px-5 py-2.5 text-sm font-black text-[#050712] hover:bg-blue-100"
+            >
               Start free
-            </button>
+            </Link>
           </div>
         </nav>
 
@@ -104,12 +109,18 @@ export default function Home() {
             </p>
 
             <div className="mt-10 flex flex-col gap-4 sm:flex-row">
-              <button className="rounded-full bg-gradient-to-r from-blue-500 via-violet-500 to-blue-500 px-8 py-4 text-base font-black shadow-2xl shadow-blue-500/25 transition hover:scale-[1.02]">
+              <Link
+                href="/login"
+                className="rounded-full bg-gradient-to-r from-blue-500 via-violet-500 to-blue-500 px-8 py-4 text-center text-base font-black shadow-2xl shadow-blue-500/25 transition hover:scale-[1.02]"
+              >
                 Start building free
-              </button>
-              <button className="rounded-full border border-white/10 bg-white/[0.04] px-8 py-4 text-base font-bold text-slate-100 backdrop-blur transition hover:border-white/25">
+              </Link>
+              <Link
+                href="/s/quality-feedback-review"
+                className="rounded-full border border-white/10 bg-white/[0.04] px-8 py-4 text-center text-base font-bold text-slate-100 backdrop-blur transition hover:border-white/25"
+              >
                 Watch product preview
-              </button>
+              </Link>
             </div>
 
             <div className="mt-12 grid max-w-2xl gap-4 sm:grid-cols-3">

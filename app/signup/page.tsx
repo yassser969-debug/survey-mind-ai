@@ -56,7 +56,7 @@ export default function SignupPage() {
                 <label className="text-sm font-bold text-slate-300">Full name</label>
                 <input
                   type="text"
-                  placeholder="Yasser Alsumeri"
+                  placeholder="Your full name"
                   className="mt-2 w-full rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3 text-white outline-none placeholder:text-slate-500 focus:border-blue-300"
                 />
               </div>

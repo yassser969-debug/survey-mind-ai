@@ -1,6 +1,12 @@
+"use client";
+
 import Link from "next/link";
+import { useActionState } from "react";
+import { login } from "@/lib/actions/auth";
 
 export default function LoginPage() {
+  const [state, formAction, pending] = useActionState(login, null);
+
   return (
     <main className="min-h-screen bg-[#050712] px-6 py-10 text-white">
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
@@ -27,11 +33,13 @@ export default function LoginPage() {
             Sign in to continue to your survey workspace.
           </p>
 
-          <form className="mt-10 space-y-5">
+          <form action={formAction} className="mt-10 space-y-5">
             <div>
               <label className="text-sm font-bold text-slate-300">Email address</label>
               <input
                 type="email"
+                name="email"
+                required
                 placeholder="you@example.com"
                 className="mt-2 w-full rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3 text-white outline-none placeholder:text-slate-500 focus:border-blue-300"
               />
@@ -41,17 +49,26 @@ export default function LoginPage() {
               <label className="text-sm font-bold text-slate-300">Password</label>
               <input
                 type="password"
+                name="password"
+                required
                 placeholder="Enter your password"
                 className="mt-2 w-full rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3 text-white outline-none placeholder:text-slate-500 focus:border-blue-300"
               />
             </div>
 
-            <Link
-              href="/dashboard"
-              className="block rounded-full bg-gradient-to-r from-blue-500 via-violet-500 to-blue-500 px-6 py-4 text-center font-black shadow-2xl shadow-blue-500/25 transition hover:scale-[1.01]"
+            {state?.error && (
+              <p className="rounded-2xl border border-rose-300/30 bg-rose-400/10 px-4 py-3 text-sm font-bold text-rose-200">
+                {state.error}
+              </p>
+            )}
+
+            <button
+              type="submit"
+              disabled={pending}
+              className="block w-full rounded-full bg-gradient-to-r from-blue-500 via-violet-500 to-blue-500 px-6 py-4 text-center font-black shadow-2xl shadow-blue-500/25 transition hover:scale-[1.01] disabled:opacity-60"
             >
-              Sign in
-            </Link>
+              {pending ? "Signing in…" : "Sign in"}
+            </button>
 
             <p className="text-center text-sm text-slate-400">
               New to SurveyMind AI?{" "}

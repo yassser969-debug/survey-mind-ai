@@ -1,6 +1,29 @@
+"use client";
+
 import Link from "next/link";
+import { useActionState, useState } from "react";
+import { signup } from "@/lib/actions/auth";
+
+const roles = [
+  {
+    value: "student",
+    title: "Student",
+    icon: "🎓",
+    description: "Create surveys, activate them, and view responses.",
+  },
+  {
+    value: "lecturer",
+    title: "Lecturer",
+    icon: "🏛️",
+    description:
+      "Everything a student can do, plus a branch to follow your students' work.",
+  },
+];
 
 export default function SignupPage() {
+  const [state, formAction, pending] = useActionState(signup, null);
+  const [role, setRole] = useState("student");
+
   return (
     <main className="min-h-screen bg-[#050712] px-6 py-10 text-white">
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
@@ -47,15 +70,40 @@ export default function SignupPage() {
                 Create your account
               </h2>
               <p className="mt-3 text-slate-400">
-                Start free. Upgrade when you need more AI, responses, and reports.
+                Start free. We will email you a verification code.
               </p>
             </div>
 
-            <form className="mt-10 space-y-5">
+            <form action={formAction} className="mt-10 space-y-5">
+              <div className="grid gap-3 sm:grid-cols-2">
+                {roles.map((option) => (
+                  <button
+                    type="button"
+                    key={option.value}
+                    onClick={() => setRole(option.value)}
+                    className={`rounded-2xl border p-4 text-left transition ${
+                      role === option.value
+                        ? "border-blue-300/60 bg-blue-400/10"
+                        : "border-white/10 bg-white/[0.04] hover:border-white/25"
+                    }`}
+                  >
+                    <p className="font-black">
+                      {option.icon} {option.title}
+                    </p>
+                    <p className="mt-1 text-xs leading-5 text-slate-400">
+                      {option.description}
+                    </p>
+                  </button>
+                ))}
+              </div>
+              <input type="hidden" name="role" value={role} />
+
               <div>
                 <label className="text-sm font-bold text-slate-300">Full name</label>
                 <input
                   type="text"
+                  name="name"
+                  required
                   placeholder="Your full name"
                   className="mt-2 w-full rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3 text-white outline-none placeholder:text-slate-500 focus:border-blue-300"
                 />
@@ -65,6 +113,8 @@ export default function SignupPage() {
                 <label className="text-sm font-bold text-slate-300">Email address</label>
                 <input
                   type="email"
+                  name="email"
+                  required
                   placeholder="you@example.com"
                   className="mt-2 w-full rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3 text-white outline-none placeholder:text-slate-500 focus:border-blue-300"
                 />
@@ -74,17 +124,27 @@ export default function SignupPage() {
                 <label className="text-sm font-bold text-slate-300">Password</label>
                 <input
                   type="password"
-                  placeholder="Create a password"
+                  name="password"
+                  required
+                  minLength={8}
+                  placeholder="At least 8 characters"
                   className="mt-2 w-full rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3 text-white outline-none placeholder:text-slate-500 focus:border-blue-300"
                 />
               </div>
 
-              <Link
-                href="/dashboard"
-                className="block rounded-full bg-gradient-to-r from-blue-500 via-violet-500 to-blue-500 px-6 py-4 text-center font-black shadow-2xl shadow-blue-500/25 transition hover:scale-[1.01]"
+              {state?.error && (
+                <p className="rounded-2xl border border-rose-300/30 bg-rose-400/10 px-4 py-3 text-sm font-bold text-rose-200">
+                  {state.error}
+                </p>
+              )}
+
+              <button
+                type="submit"
+                disabled={pending}
+                className="block w-full rounded-full bg-gradient-to-r from-blue-500 via-violet-500 to-blue-500 px-6 py-4 text-center font-black shadow-2xl shadow-blue-500/25 transition hover:scale-[1.01] disabled:opacity-60"
               >
-                Create account
-              </Link>
+                {pending ? "Creating account…" : "Create account"}
+              </button>
 
               <p className="text-center text-sm text-slate-400">
                 Already have an account?{" "}

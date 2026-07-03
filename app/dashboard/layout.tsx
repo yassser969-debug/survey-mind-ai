@@ -4,7 +4,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { logout } from "@/lib/actions/auth";
 
 const roleLabels: Record<string, string> = {
-  admin: "Administrator",
+  admin: "Founder",
   student: "Student",
   lecturer: "Lecturer",
 };
@@ -59,7 +59,7 @@ export default async function DashboardLayout({
                   href="/dashboard/admin"
                   className="rounded-full px-3 py-1.5 transition hover:bg-white/10 hover:text-white"
                 >
-                  Admin
+                  👑 Founder panel
                 </Link>
               )}
             </nav>

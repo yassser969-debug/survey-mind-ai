@@ -75,7 +75,24 @@ export function getDb(): Database.Database {
       answers TEXT NOT NULL,
       submitted_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
+
+    CREATE TABLE IF NOT EXISTS analyses (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      survey_id TEXT NOT NULL REFERENCES surveys(id) ON DELETE CASCADE,
+      engine TEXT NOT NULL DEFAULT 'basic',
+      result TEXT NOT NULL,
+      response_count INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
   `);
+
+  // Lightweight migration for databases created before the ban feature.
+  const userColumns = db.prepare("PRAGMA table_info(users)").all() as {
+    name: string;
+  }[];
+  if (!userColumns.some((column) => column.name === "banned_at")) {
+    db.exec("ALTER TABLE users ADD COLUMN banned_at TEXT");
+  }
 
   return db;
 }

@@ -69,7 +69,8 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
       `SELECT u.id, u.name, u.email, u.role, u.email_verified_at
        FROM sessions s
        JOIN users u ON u.id = s.user_id
-       WHERE s.token = ? AND s.expires_at > datetime('now')`
+       WHERE s.token = ? AND s.expires_at > datetime('now')
+         AND u.banned_at IS NULL`
     )
     .get(token) as
     | {
@@ -132,25 +133,38 @@ export function consumeVerificationCode(
   return true;
 }
 
+/** The platform founder — the one account with every capability. */
+export const FOUNDER_EMAIL = (
+  process.env.ADMIN_EMAIL ?? "yassser969@gmail.com"
+).toLowerCase();
+
 /**
- * Seeds the admin account (all features) once. Credentials come from
- * ADMIN_EMAIL / ADMIN_PASSWORD env vars, with local defaults for development.
+ * Seeds the founder account (all features) once, and promotes the founder
+ * email to admin if it already exists as a regular account. The password
+ * comes from ADMIN_PASSWORD, with a local default for development.
  */
 export function ensureAdminAccount(): void {
   const db = getDb();
-  const email = process.env.ADMIN_EMAIL ?? "admin@surveymind.local";
-  const exists = db
-    .prepare("SELECT id FROM users WHERE role = 'admin' LIMIT 1")
-    .get();
 
-  if (exists) return;
+  const existing = db
+    .prepare("SELECT id, role FROM users WHERE email = ?")
+    .get(FOUNDER_EMAIL) as { id: number; role: string } | undefined;
+
+  if (existing) {
+    if (existing.role !== "admin") {
+      db.prepare("UPDATE users SET role = 'admin' WHERE id = ?").run(
+        existing.id
+      );
+    }
+    return;
+  }
 
   db.prepare(
     `INSERT INTO users (name, email, password_hash, role, email_verified_at)
      VALUES (?, ?, ?, 'admin', datetime('now'))`
   ).run(
-    "Administrator",
-    email,
+    "Founder",
+    FOUNDER_EMAIL,
     hashPassword(process.env.ADMIN_PASSWORD ?? "admin12345")
   );
 }

@@ -128,14 +128,23 @@ export async function login(
 
   const user = getDb()
     .prepare(
-      "SELECT id, password_hash, email_verified_at FROM users WHERE email = ?"
+      "SELECT id, password_hash, email_verified_at, banned_at FROM users WHERE email = ?"
     )
     .get(email) as
-    | { id: number; password_hash: string; email_verified_at: string | null }
+    | {
+        id: number;
+        password_hash: string;
+        email_verified_at: string | null;
+        banned_at: string | null;
+      }
     | undefined;
 
   if (!user || !verifyPassword(password, user.password_hash)) {
     return { error: "Incorrect email or password." };
+  }
+
+  if (user.banned_at) {
+    return { error: "This account has been blocked by the administrator." };
   }
 
   if (!user.email_verified_at) {

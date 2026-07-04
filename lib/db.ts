@@ -7,7 +7,9 @@ let db: Database.Database | null = null;
 export function getDb(): Database.Database {
   if (db) return db;
 
-  const dataDir = path.join(process.cwd(), "data");
+  // SURVEYMIND_DB_DIR lets tests point the database at a temp directory.
+  const dataDir =
+    process.env.SURVEYMIND_DB_DIR ?? path.join(process.cwd(), "data");
   mkdirSync(dataDir, { recursive: true });
 
   db = new Database(path.join(dataDir, "surveymind.db"));

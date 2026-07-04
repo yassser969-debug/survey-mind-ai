@@ -30,9 +30,17 @@ export function getDb(): Database.Database {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       code TEXT NOT NULL,
+      purpose TEXT NOT NULL DEFAULT 'verify',
+      attempts INTEGER NOT NULL DEFAULT 0,
       expires_at TEXT NOT NULL,
       consumed_at TEXT,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS rate_limits (
+      key TEXT PRIMARY KEY,
+      count INTEGER NOT NULL DEFAULT 1,
+      reset_at INTEGER NOT NULL
     );
 
     CREATE TABLE IF NOT EXISTS sessions (
@@ -86,12 +94,26 @@ export function getDb(): Database.Database {
     );
   `);
 
-  // Lightweight migration for databases created before the ban feature.
+  // Lightweight migrations for databases created before newer features.
   const userColumns = db.prepare("PRAGMA table_info(users)").all() as {
     name: string;
   }[];
   if (!userColumns.some((column) => column.name === "banned_at")) {
     db.exec("ALTER TABLE users ADD COLUMN banned_at TEXT");
+  }
+
+  const codeColumns = db.prepare("PRAGMA table_info(email_codes)").all() as {
+    name: string;
+  }[];
+  if (!codeColumns.some((column) => column.name === "purpose")) {
+    db.exec(
+      "ALTER TABLE email_codes ADD COLUMN purpose TEXT NOT NULL DEFAULT 'verify'"
+    );
+  }
+  if (!codeColumns.some((column) => column.name === "attempts")) {
+    db.exec(
+      "ALTER TABLE email_codes ADD COLUMN attempts INTEGER NOT NULL DEFAULT 0"
+    );
   }
 
   return db;

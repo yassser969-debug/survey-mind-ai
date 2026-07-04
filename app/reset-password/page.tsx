@@ -1,24 +1,24 @@
 import { redirect } from "next/navigation";
 import { getDb } from "@/lib/db";
-import VerifyForm from "./verify-form";
+import ResetForm from "./reset-form";
 
-export default async function VerifyPage({
+export default async function ResetPasswordPage({
   searchParams,
 }: {
   searchParams: Promise<{ email?: string }>;
 }) {
   const { email } = await searchParams;
-  if (!email) redirect("/signup");
+  if (!email) redirect("/forgot-password");
 
   // Local development fallback: without an email provider configured,
-  // surface the pending code so the flow stays testable end-to-end.
+  // surface the pending reset code so the flow stays testable end-to-end.
   let devCode: string | null = null;
   if (!process.env.RESEND_API_KEY) {
     const row = getDb()
       .prepare(
         `SELECT c.code FROM email_codes c
          JOIN users u ON u.id = c.user_id
-         WHERE u.email = ? AND c.purpose = 'verify' AND c.consumed_at IS NULL
+         WHERE u.email = ? AND c.purpose = 'reset' AND c.consumed_at IS NULL
            AND c.expires_at > datetime('now')
          ORDER BY c.id DESC LIMIT 1`
       )
@@ -26,5 +26,5 @@ export default async function VerifyPage({
     devCode = row?.code ?? null;
   }
 
-  return <VerifyForm email={email} devCode={devCode} />;
+  return <ResetForm email={email} devCode={devCode} />;
 }

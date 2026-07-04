@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { randomBytes } from "node:crypto";
 import { getDb } from "../db";
 import { getCurrentUser } from "../auth";
+import { checkRateLimit } from "../rate-limit";
 import type { FormState } from "./auth";
 
 export async function createSurvey(
@@ -13,11 +14,12 @@ export async function createSurvey(
   const user = await getCurrentUser();
   if (!user) return { error: "Please sign in first." };
 
-  const title = String(formData.get("title") ?? "").trim();
+  const title = String(formData.get("title") ?? "").trim().slice(0, 200);
   const questions = String(formData.get("questions") ?? "")
     .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean);
+    .map((line) => line.trim().slice(0, 500))
+    .filter(Boolean)
+    .slice(0, 50);
 
   if (title.length < 3) return { error: "Please enter a survey title." };
   if (questions.length === 0)
@@ -83,7 +85,12 @@ export async function submitResponse(
   _prev: SubmitState,
   formData: FormData
 ): Promise<SubmitState> {
-  const surveyId = String(formData.get("surveyId") ?? "");
+  const surveyId = String(formData.get("surveyId") ?? "").slice(0, 32);
+
+  // Slow down automated spam on public survey links.
+  if (!checkRateLimit(`respond:${surveyId}`, 30, 60)) {
+    return { error: "Too many submissions right now. Please try again in a minute." };
+  }
 
   const db = getDb();
   const survey = db
@@ -96,7 +103,7 @@ export async function submitResponse(
 
   const questions = JSON.parse(survey.questions) as string[];
   const answers = questions.map((_, index) =>
-    String(formData.get(`answer-${index}`) ?? "").trim()
+    String(formData.get(`answer-${index}`) ?? "").trim().slice(0, 5000)
   );
 
   if (answers.every((answer) => !answer)) {

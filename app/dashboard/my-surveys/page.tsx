@@ -3,6 +3,8 @@ import { getCurrentUser } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 import { activateSurvey, closeSurvey } from "@/lib/actions/surveys";
 import { collectionDuration } from "@/lib/format";
+import { getDict } from "@/lib/i18n";
+import { fmt } from "@/lib/i18n/format";
 import CreateSurveyForm from "./create-survey-form";
 
 type SurveyRow = {
@@ -26,6 +28,9 @@ export default async function MySurveysPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
+  const dict = await getDict();
+  const t = dict.mySurveys;
+
   const surveys = getDb()
     .prepare(
       `SELECT s.*, COUNT(r.id) AS response_count
@@ -39,19 +44,17 @@ export default async function MySurveysPage() {
 
   return (
     <main className="mx-auto max-w-5xl px-5 py-10">
-      <h1 className="text-3xl font-black tracking-tight">My surveys</h1>
-      <p className="mt-2 text-slate-400">
-        Create a survey, activate it to start collecting, and share its link.
-      </p>
+      <h1 className="text-3xl font-black tracking-tight">{t.title}</h1>
+      <p className="mt-2 text-slate-400">{t.subtitle}</p>
 
       <div className="mt-8">
-        <CreateSurveyForm />
+        <CreateSurveyForm t={t} />
       </div>
 
       <div className="mt-8 space-y-5">
         {surveys.length === 0 && (
           <p className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-8 text-center text-slate-400">
-            No surveys yet — create your first one above.
+            {t.empty}
           </p>
         )}
 
@@ -72,16 +75,22 @@ export default async function MySurveysPage() {
                 <div>
                   <h2 className="text-xl font-black">{survey.title}</h2>
                   <p className="mt-1 text-sm text-slate-400">
-                    {questions.length} questions · {survey.response_count}{" "}
-                    responses · collecting for{" "}
-                    {collectionDuration(survey.activated_at, survey.closed_at)}
+                    {fmt(t.stats, {
+                      q: questions.length,
+                      r: survey.response_count,
+                      d: collectionDuration(
+                        survey.activated_at,
+                        survey.closed_at,
+                        dict.units
+                      ),
+                    })}
                   </p>
                 </div>
 
                 <span
                   className={`rounded-full px-3 py-1 text-xs font-black uppercase ${statusStyles[survey.status]}`}
                 >
-                  {survey.status}
+                  {t.status[survey.status]}
                 </span>
               </div>
 
@@ -93,7 +102,7 @@ export default async function MySurveysPage() {
                       type="submit"
                       className="rounded-full bg-emerald-400/90 px-5 py-2 text-sm font-black text-[#04140c] transition hover:bg-emerald-300"
                     >
-                      {survey.status === "draft" ? "Activate" : "Reopen"}
+                      {survey.status === "draft" ? t.activate : t.reopen}
                     </button>
                   </form>
                 ) : (
@@ -103,13 +112,16 @@ export default async function MySurveysPage() {
                       type="submit"
                       className="rounded-full border border-rose-300/40 px-5 py-2 text-sm font-black text-rose-200 transition hover:bg-rose-400/10"
                     >
-                      Close collection
+                      {t.close}
                     </button>
                   </form>
                 )}
 
                 {survey.status === "active" && (
-                  <code className="rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 text-sm text-blue-200">
+                  <code
+                    dir="ltr"
+                    className="rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 text-sm text-blue-200"
+                  >
                     /s/{survey.id}
                   </code>
                 )}
@@ -118,7 +130,7 @@ export default async function MySurveysPage() {
               {responses.length > 0 && (
                 <details className="mt-5 rounded-2xl border border-white/10 bg-[#080d1d] p-4">
                   <summary className="cursor-pointer font-black text-slate-200">
-                    View {responses.length} responses
+                    {fmt(t.viewResponses, { n: responses.length })}
                   </summary>
                   <div className="mt-4 space-y-4">
                     {responses.map((response, responseIndex) => {
@@ -128,7 +140,7 @@ export default async function MySurveysPage() {
                           key={responseIndex}
                           className="rounded-2xl bg-white/[0.04] p-4"
                         >
-                          <p className="text-xs font-bold text-slate-500">
+                          <p dir="ltr" className="text-xs font-bold text-slate-500">
                             {response.submitted_at} UTC
                           </p>
                           <ul className="mt-2 space-y-2">

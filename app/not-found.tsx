@@ -1,6 +1,9 @@
 import Link from "next/link";
+import { getDict } from "@/lib/i18n";
 
-export default function NotFound() {
+export default async function NotFound() {
+  const t = (await getDict()).notFound;
+
   return (
     <main className="flex min-h-screen items-center justify-center bg-[#050712] px-6 text-white">
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
@@ -9,15 +12,13 @@ export default function NotFound() {
 
       <div className="relative max-w-xl text-center">
         <p className="text-7xl font-black tracking-tight">404</p>
-        <h1 className="mt-4 text-2xl font-black">This page does not exist</h1>
-        <p className="mt-3 leading-7 text-slate-400">
-          The link may be wrong, or the page may have been moved.
-        </p>
+        <h1 className="mt-4 text-2xl font-black">{t.title}</h1>
+        <p className="mt-3 leading-7 text-slate-400">{t.text}</p>
         <Link
           href="/"
           className="mt-8 inline-block rounded-full bg-gradient-to-r from-blue-500 via-violet-500 to-emerald-400 px-8 py-4 font-black shadow-2xl shadow-blue-500/20 transition hover:-translate-y-0.5"
         >
-          Back to home
+          {t.button}
         </Link>
       </div>
     </main>

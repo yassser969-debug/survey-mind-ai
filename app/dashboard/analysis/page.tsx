@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { getDb } from "@/lib/db";
+import { getDict } from "@/lib/i18n";
+import { fmt } from "@/lib/i18n/format";
 import type { AnalysisResult } from "@/lib/analysis";
 import AnalyzeButton from "./analyze-button";
 
@@ -28,6 +30,7 @@ export default async function AnalysisPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
+  const t = (await getDict()).analysis;
   const db = getDb();
   const surveys = db
     .prepare(
@@ -44,23 +47,19 @@ export default async function AnalysisPage() {
 
   return (
     <main className="mx-auto max-w-5xl px-5 py-10">
-      <h1 className="text-3xl font-black tracking-tight">AI analysis</h1>
-      <p className="mt-2 text-slate-400">
-        Turn your responses into summaries, themes, and practical
-        recommendations.
-      </p>
+      <h1 className="text-3xl font-black tracking-tight">{t.title}</h1>
+      <p className="mt-2 text-slate-400">{t.subtitle}</p>
 
       {!aiEnabled && (
         <p className="mt-5 rounded-2xl border border-amber-300/30 bg-amber-400/10 px-4 py-3 text-sm font-bold text-amber-200">
-          AI engine not connected yet — analyses run in basic statistical mode.
-          Add an ANTHROPIC_API_KEY to unlock full AI analysis.
+          {t.noKey}
         </p>
       )}
 
       <div className="mt-8 space-y-6">
         {surveys.length === 0 && (
           <p className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-8 text-center text-slate-400">
-            Create a survey and collect responses first.
+            {t.empty}
           </p>
         )}
 
@@ -82,11 +81,13 @@ export default async function AnalysisPage() {
                 <div>
                   <h2 className="text-xl font-black">{survey.title}</h2>
                   <p className="mt-1 text-sm text-slate-400">
-                    {survey.response_count} responses · {analyses.length}{" "}
-                    analyses
+                    {fmt(t.counts, {
+                      r: survey.response_count,
+                      a: analyses.length,
+                    })}
                   </p>
                 </div>
-                <AnalyzeButton surveyId={survey.id} />
+                <AnalyzeButton surveyId={survey.id} t={t} />
               </div>
 
               {analyses.map((analysis, index) => {
@@ -98,11 +99,14 @@ export default async function AnalysisPage() {
                   >
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <p className="text-xs font-bold text-slate-500">
-                        {analysis.created_at} UTC ·{" "}
-                        {analysis.engine === "claude"
-                          ? "Claude AI"
-                          : "Basic statistics"}{" "}
-                        · {analysis.response_count} responses
+                        <span dir="ltr">{analysis.created_at} UTC</span> ·{" "}
+                        {fmt(t.meta, {
+                          engine:
+                            analysis.engine === "claude"
+                              ? t.engineClaude
+                              : t.engineBasic,
+                          r: analysis.response_count,
+                        })}
                       </p>
                       <span
                         className={`rounded-full px-3 py-1 text-xs font-black uppercase ${
@@ -110,7 +114,7 @@ export default async function AnalysisPage() {
                           sentimentStyles.neutral
                         }`}
                       >
-                        {result.sentiment}
+                        {t.sentiment[result.sentiment] ?? result.sentiment}
                       </span>
                     </div>
 
@@ -121,7 +125,7 @@ export default async function AnalysisPage() {
                     {result.themes.length > 0 && (
                       <div className="mt-5">
                         <p className="text-sm font-black text-blue-200">
-                          Common themes
+                          {t.themes}
                         </p>
                         <div className="mt-3 grid gap-2 sm:grid-cols-2">
                           {result.themes.map((theme, themeIndex) => (
@@ -142,7 +146,7 @@ export default async function AnalysisPage() {
                     {result.recommendations.length > 0 && (
                       <div className="mt-5">
                         <p className="text-sm font-black text-emerald-200">
-                          Recommendations
+                          {t.recommendations}
                         </p>
                         <ul className="mt-3 space-y-2">
                           {result.recommendations.map(

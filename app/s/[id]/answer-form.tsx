@@ -2,13 +2,16 @@
 
 import { useActionState } from "react";
 import { submitResponse } from "@/lib/actions/surveys";
+import type { Dict } from "@/lib/i18n/dictionaries";
 
 export default function AnswerForm({
   surveyId,
   questions,
+  t,
 }: {
   surveyId: string;
   questions: string[];
+  t: Dict["survey"];
 }) {
   const [state, formAction, pending] = useActionState(submitResponse, null);
 
@@ -16,8 +19,8 @@ export default function AnswerForm({
     return (
       <div className="rounded-[2rem] border border-emerald-300/30 bg-emerald-300/10 p-10 text-center">
         <p className="text-4xl">🎉</p>
-        <h2 className="mt-4 text-2xl font-black">Thank you!</h2>
-        <p className="mt-2 text-slate-300">Your response has been recorded.</p>
+        <h2 className="mt-4 text-2xl font-black">{t.thanksTitle}</h2>
+        <p className="mt-2 text-slate-300">{t.thanksText}</p>
       </div>
     );
   }
@@ -37,7 +40,7 @@ export default function AnswerForm({
           <textarea
             name={`answer-${index}`}
             rows={3}
-            placeholder="Your answer…"
+            placeholder={t.answerPh}
             className="mt-3 w-full rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3 text-white outline-none placeholder:text-slate-500 focus:border-blue-300"
           />
         </div>
@@ -54,7 +57,7 @@ export default function AnswerForm({
         disabled={pending}
         className="w-full rounded-full bg-gradient-to-r from-blue-500 via-violet-500 to-emerald-400 px-6 py-4 font-black shadow-2xl shadow-blue-500/20 transition hover:-translate-y-0.5 disabled:opacity-60"
       >
-        {pending ? "Submitting…" : "Submit response"}
+        {pending ? t.submitting : t.submit}
       </button>
     </form>
   );

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { randomInt } from "node:crypto";
 import { getDb } from "../db";
 import { getCurrentUser } from "../auth";
+import { getDict } from "../i18n";
 import type { FormState } from "./auth";
 
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -20,13 +21,14 @@ export async function createBranch(
   _prev: FormState,
   formData: FormData
 ): Promise<FormState> {
+  const t = (await getDict()).errors;
   const user = await getCurrentUser();
   if (!user || (user.role !== "lecturer" && user.role !== "admin")) {
-    return { error: "Only lecturers can create a branch." };
+    return { error: t.lecturerOnly };
   }
 
   const name = String(formData.get("name") ?? "").trim().slice(0, 100);
-  if (name.length < 2) return { error: "Please enter a branch name." };
+  if (name.length < 2) return { error: t.branchName };
 
   const db = getDb();
   let code = newJoinCode();
@@ -46,27 +48,28 @@ export async function joinBranch(
   _prev: FormState,
   formData: FormData
 ): Promise<FormState> {
+  const t = (await getDict()).errors;
   const user = await getCurrentUser();
   if (!user || user.role !== "student") {
-    return { error: "Only students can join a branch." };
+    return { error: t.studentOnly };
   }
 
   const code = String(formData.get("code") ?? "").trim().toUpperCase();
-  if (!code) return { error: "Please enter the join code." };
+  if (!code) return { error: t.enterCode };
 
   const db = getDb();
   const branch = db
     .prepare("SELECT id FROM branches WHERE join_code = ?")
     .get(code) as { id: number } | undefined;
 
-  if (!branch) return { error: "No branch found with this code." };
+  if (!branch) return { error: t.branchNotFound };
 
   const already = db
     .prepare(
       "SELECT 1 FROM branch_members WHERE branch_id = ? AND student_id = ?"
     )
     .get(branch.id, user.id);
-  if (already) return { error: "You already joined this branch." };
+  if (already) return { error: t.alreadyJoined };
 
   db.prepare(
     "INSERT INTO branch_members (branch_id, student_id) VALUES (?, ?)"

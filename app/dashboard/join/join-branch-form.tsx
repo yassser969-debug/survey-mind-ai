@@ -2,8 +2,9 @@
 
 import { useActionState } from "react";
 import { joinBranch } from "@/lib/actions/branch";
+import type { Dict } from "@/lib/i18n/dictionaries";
 
-export default function JoinBranchForm() {
+export default function JoinBranchForm({ t }: { t: Dict["join"] }) {
   const [state, formAction, pending] = useActionState(joinBranch, null);
 
   return (
@@ -11,16 +12,15 @@ export default function JoinBranchForm() {
       action={formAction}
       className="rounded-[2rem] border border-white/10 bg-white/[0.05] p-6"
     >
-      <h2 className="text-xl font-black">Join your lecturer&apos;s branch</h2>
-      <p className="mt-1 text-sm text-slate-400">
-        Enter the 6-character code your lecturer shared with you.
-      </p>
+      <h2 className="text-xl font-black">{t.formTitle}</h2>
+      <p className="mt-1 text-sm text-slate-400">{t.formSubtitle}</p>
 
       <div className="mt-4 flex flex-wrap gap-3">
         <input
           type="text"
           name="code"
           required
+          dir="ltr"
           maxLength={6}
           placeholder="AB12CD"
           className="w-48 rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3 text-center text-xl font-black uppercase tracking-[0.3em] text-white outline-none placeholder:text-slate-600 focus:border-blue-300"
@@ -30,7 +30,7 @@ export default function JoinBranchForm() {
           disabled={pending}
           className="rounded-full bg-gradient-to-r from-blue-500 via-violet-500 to-emerald-400 px-6 py-3 font-black shadow-xl shadow-blue-500/20 transition hover:-translate-y-0.5 disabled:opacity-60"
         >
-          {pending ? "Joining…" : "Join branch"}
+          {pending ? t.joining : t.button}
         </button>
       </div>
 

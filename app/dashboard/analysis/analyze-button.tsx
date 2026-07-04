@@ -2,8 +2,15 @@
 
 import { useActionState } from "react";
 import { analyzeSurvey } from "@/lib/actions/analysis";
+import type { Dict } from "@/lib/i18n/dictionaries";
 
-export default function AnalyzeButton({ surveyId }: { surveyId: string }) {
+export default function AnalyzeButton({
+  surveyId,
+  t,
+}: {
+  surveyId: string;
+  t: Dict["analysis"];
+}) {
   const [state, formAction, pending] = useActionState(analyzeSurvey, null);
 
   return (
@@ -14,7 +21,7 @@ export default function AnalyzeButton({ surveyId }: { surveyId: string }) {
         disabled={pending}
         className="rounded-full bg-gradient-to-r from-blue-500 via-violet-500 to-emerald-400 px-5 py-2.5 text-sm font-black shadow-xl shadow-blue-500/20 transition hover:-translate-y-0.5 disabled:opacity-60"
       >
-        {pending ? "Analysing…" : "✦ Run AI analysis"}
+        {pending ? t.running : t.run}
       </button>
       {state?.error && (
         <p className="text-sm font-bold text-rose-200">{state.error}</p>

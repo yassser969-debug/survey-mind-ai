@@ -2,12 +2,13 @@ import { redirect } from "next/navigation";
 import { FOUNDER_EMAIL, getCurrentUser } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 import { banUser, unbanUser } from "@/lib/actions/admin";
+import { getDict } from "@/lib/i18n";
 
 type UserRow = {
   id: number;
   name: string;
   email: string;
-  role: string;
+  role: "admin" | "student" | "lecturer";
   email_verified_at: string | null;
   banned_at: string | null;
   created_at: string;
@@ -20,6 +21,8 @@ export default async function AdminPage() {
   if (!user) redirect("/login");
   if (user.role !== "admin") redirect("/dashboard");
 
+  const dict = await getDict();
+  const t = dict.admin;
   const db = getDb();
 
   const totals = db
@@ -51,27 +54,25 @@ export default async function AdminPage() {
     .all() as UserRow[];
 
   const tiles = [
-    { label: "Subscribers", value: totals.users },
-    { label: "Students", value: totals.students },
-    { label: "Lecturers", value: totals.lecturers },
-    { label: "Verified emails", value: totals.verified },
-    { label: "Blocked", value: totals.banned },
-    { label: "Surveys", value: totals.surveys },
-    { label: "Responses", value: totals.responses },
-    { label: "Branches", value: totals.branches },
+    { label: t.tiles.users, value: totals.users },
+    { label: t.tiles.students, value: totals.students },
+    { label: t.tiles.lecturers, value: totals.lecturers },
+    { label: t.tiles.verified, value: totals.verified },
+    { label: t.tiles.banned, value: totals.banned },
+    { label: t.tiles.surveys, value: totals.surveys },
+    { label: t.tiles.responses, value: totals.responses },
+    { label: t.tiles.branches, value: totals.branches },
   ];
 
   return (
     <main className="mx-auto max-w-6xl px-5 py-10">
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-3xl font-black tracking-tight">Founder panel</h1>
+        <h1 className="text-3xl font-black tracking-tight">{t.title}</h1>
         <span className="rounded-full bg-gradient-to-r from-blue-400/20 via-violet-400/20 to-emerald-300/20 px-4 py-1.5 text-xs font-black text-blue-200">
-          👑 Full control
+          {t.badge}
         </span>
       </div>
-      <p className="mt-2 text-slate-400">
-        Follow every account, block emails, and track your subscribers.
-      </p>
+      <p className="mt-2 text-slate-400">{t.subtitle}</p>
 
       <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
         {tiles.map((tile) => (
@@ -86,17 +87,17 @@ export default async function AdminPage() {
       </div>
 
       <div className="mt-8 overflow-x-auto rounded-[2rem] border border-white/10 bg-white/[0.05] p-6">
-        <h2 className="text-xl font-black">All accounts</h2>
+        <h2 className="text-xl font-black">{t.allAccounts}</h2>
         <table className="mt-5 w-full min-w-[52rem] text-sm">
           <thead>
-            <tr className="text-left text-xs font-black uppercase tracking-wider text-slate-500">
-              <th className="pb-3 pr-4">User</th>
-              <th className="pb-3 pr-4">Role</th>
-              <th className="pb-3 pr-4">Status</th>
-              <th className="pb-3 pr-4">Surveys</th>
-              <th className="pb-3 pr-4">Responses</th>
-              <th className="pb-3 pr-4">Joined</th>
-              <th className="pb-3">Action</th>
+            <tr className="text-xs font-black uppercase tracking-wider text-slate-500">
+              <th className="pb-3 pe-4 text-start">{t.colUser}</th>
+              <th className="pb-3 pe-4 text-start">{t.colRole}</th>
+              <th className="pb-3 pe-4 text-start">{t.colStatus}</th>
+              <th className="pb-3 pe-4 text-start">{t.colSurveys}</th>
+              <th className="pb-3 pe-4 text-start">{t.colResponses}</th>
+              <th className="pb-3 pe-4 text-start">{t.colJoined}</th>
+              <th className="pb-3 text-start">{t.colAction}</th>
             </tr>
           </thead>
           <tbody>
@@ -107,33 +108,35 @@ export default async function AdminPage() {
                   key={row.id}
                   className="border-t border-white/5 text-slate-300"
                 >
-                  <td className="py-3 pr-4">
+                  <td className="py-3 pe-4">
                     <p className="font-bold text-white">
                       {row.name} {isFounder && "👑"}
                     </p>
-                    <p className="text-xs text-slate-500">{row.email}</p>
+                    <p dir="ltr" className="text-xs text-slate-500">
+                      {row.email}
+                    </p>
                   </td>
-                  <td className="py-3 pr-4 capitalize">
-                    {isFounder ? "Founder" : row.role}
+                  <td className="py-3 pe-4">
+                    {dict.common.roles[row.role]}
                   </td>
-                  <td className="py-3 pr-4">
+                  <td className="py-3 pe-4">
                     {row.banned_at ? (
                       <span className="rounded-full bg-rose-300/15 px-3 py-1 text-xs font-black text-rose-200">
-                        Blocked
+                        {t.statusBlocked}
                       </span>
                     ) : row.email_verified_at ? (
                       <span className="rounded-full bg-emerald-300/15 px-3 py-1 text-xs font-black text-emerald-200">
-                        Verified
+                        {t.statusVerified}
                       </span>
                     ) : (
                       <span className="rounded-full bg-amber-300/15 px-3 py-1 text-xs font-black text-amber-200">
-                        Unverified
+                        {t.statusUnverified}
                       </span>
                     )}
                   </td>
-                  <td className="py-3 pr-4">{row.survey_count}</td>
-                  <td className="py-3 pr-4">{row.response_count}</td>
-                  <td className="py-3 pr-4 text-xs text-slate-500">
+                  <td className="py-3 pe-4">{row.survey_count}</td>
+                  <td className="py-3 pe-4">{row.response_count}</td>
+                  <td dir="ltr" className="py-3 pe-4 text-xs text-slate-500">
                     {row.created_at}
                   </td>
                   <td className="py-3">
@@ -146,7 +149,7 @@ export default async function AdminPage() {
                           type="submit"
                           className="rounded-full border border-emerald-300/40 px-4 py-1.5 text-xs font-black text-emerald-200 transition hover:bg-emerald-400/10"
                         >
-                          Unblock
+                          {t.unblock}
                         </button>
                       </form>
                     ) : (
@@ -156,7 +159,7 @@ export default async function AdminPage() {
                           type="submit"
                           className="rounded-full border border-rose-300/40 px-4 py-1.5 text-xs font-black text-rose-200 transition hover:bg-rose-400/10"
                         >
-                          Block
+                          {t.block}
                         </button>
                       </form>
                     )}

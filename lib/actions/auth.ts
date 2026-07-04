@@ -14,16 +14,17 @@ import {
 } from "../auth";
 import { sendVerificationEmail } from "../mail";
 import { checkRateLimit, clearRateLimit } from "../rate-limit";
+import { getDict } from "../i18n";
 
 export type FormState = { error: string } | null;
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const TOO_MANY = "Too many attempts. Please wait a few minutes and try again.";
 
 export async function signup(
   _prev: FormState,
   formData: FormData
 ): Promise<FormState> {
+  const t = (await getDict()).errors;
   const name = String(formData.get("name") ?? "").trim().slice(0, 100);
   const email = String(formData.get("email") ?? "")
     .trim()
@@ -33,18 +34,18 @@ export async function signup(
   const confirm = String(formData.get("confirm") ?? "");
   const role = String(formData.get("role") ?? "student");
 
-  if (name.length < 2) return { error: "Please enter your full name." };
+  if (name.length < 2) return { error: t.name };
   if (!EMAIL_PATTERN.test(email))
-    return { error: "Please enter a valid email address." };
+    return { error: t.email };
   if (password.length < 8 || password.length > 100)
-    return { error: "Password must be 8-100 characters." };
+    return { error: t.password };
   if (password !== confirm)
-    return { error: "Passwords do not match." };
+    return { error: t.passwordMatch };
   if (role !== "student" && role !== "lecturer")
-    return { error: "Please choose an account type." };
+    return { error: t.role };
 
   if (!checkRateLimit(`signup:${email}`, 3, 60 * 60)) {
-    return { error: TOO_MANY };
+    return { error: t.tooMany };
   }
 
   const db = getDb();
@@ -57,7 +58,7 @@ export async function signup(
   let userId: number;
 
   if (existing && existing.email_verified_at) {
-    return { error: "An account with this email already exists. Sign in instead." };
+    return { error: t.emailExists };
   } else if (existing) {
     // Unverified leftover signup: refresh it so the user can try again.
     db.prepare(
@@ -78,7 +79,7 @@ export async function signup(
   try {
     await sendVerificationEmail(email, code);
   } catch {
-    return { error: "We could not send the verification email. Please try again." };
+    return { error: t.emailSend };
   }
 
   redirect(`/verify?email=${encodeURIComponent(email)}`);
@@ -88,11 +89,12 @@ export async function verifyEmail(
   _prev: FormState,
   formData: FormData
 ): Promise<FormState> {
+  const t = (await getDict()).errors;
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const code = String(formData.get("code") ?? "").trim().slice(0, 6);
 
   if (!checkRateLimit(`verify:${email}`, 10, 15 * 60)) {
-    return { error: TOO_MANY };
+    return { error: t.tooMany };
   }
 
   const user = getDb()
@@ -100,7 +102,7 @@ export async function verifyEmail(
     .get(email) as { id: number } | undefined;
 
   if (!user || !consumeVerificationCode(user.id, code, "verify")) {
-    return { error: "Invalid or expired code. Please try again." };
+    return { error: t.badCode };
   }
 
   await createSession(user.id);
@@ -111,26 +113,27 @@ export async function resendCode(
   _prev: FormState,
   formData: FormData
 ): Promise<FormState> {
+  const t = (await getDict()).errors;
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
 
   if (!checkRateLimit(`resend:${email}`, 3, 10 * 60)) {
-    return { error: TOO_MANY };
+    return { error: t.tooMany };
   }
 
   const user = getDb()
     .prepare("SELECT id, email_verified_at FROM users WHERE email = ?")
     .get(email) as { id: number; email_verified_at: string | null } | undefined;
 
-  if (!user) return { error: "Account not found. Please sign up again." };
+  if (!user) return { error: t.accountNotFound };
   if (user.email_verified_at)
-    return { error: "This email is already verified. You can sign in." };
+    return { error: t.alreadyVerified };
 
   const code = generateVerificationCode(user.id, "verify");
 
   try {
     await sendVerificationEmail(email, code);
   } catch {
-    return { error: "We could not send the verification email. Please try again." };
+    return { error: t.emailSend };
   }
 
   return null;
@@ -140,6 +143,7 @@ export async function login(
   _prev: FormState,
   formData: FormData
 ): Promise<FormState> {
+  const t = (await getDict()).errors;
   const email = String(formData.get("email") ?? "")
     .trim()
     .toLowerCase()
@@ -147,7 +151,7 @@ export async function login(
   const password = String(formData.get("password") ?? "").slice(0, 100);
 
   if (!checkRateLimit(`login:${email}`, 5, 15 * 60)) {
-    return { error: TOO_MANY };
+    return { error: t.tooMany };
   }
 
   ensureAdminAccount();
@@ -166,11 +170,11 @@ export async function login(
     | undefined;
 
   if (!verifyPasswordSafe(password, user?.password_hash)) {
-    return { error: "Incorrect email or password." };
+    return { error: t.badCredentials };
   }
 
   if (user!.banned_at) {
-    return { error: "This account has been blocked by the administrator." };
+    return { error: t.blocked };
   }
 
   if (!user!.email_verified_at) {
@@ -178,7 +182,7 @@ export async function login(
     try {
       await sendVerificationEmail(email, code);
     } catch {
-      return { error: "We could not send the verification email. Please try again." };
+      return { error: t.emailSend };
     }
     redirect(`/verify?email=${encodeURIComponent(email)}`);
   }
@@ -192,16 +196,17 @@ export async function requestPasswordReset(
   _prev: FormState,
   formData: FormData
 ): Promise<FormState> {
+  const t = (await getDict()).errors;
   const email = String(formData.get("email") ?? "")
     .trim()
     .toLowerCase()
     .slice(0, 255);
 
   if (!EMAIL_PATTERN.test(email))
-    return { error: "Please enter a valid email address." };
+    return { error: t.email };
 
   if (!checkRateLimit(`forgot:${email}`, 3, 15 * 60)) {
-    return { error: TOO_MANY };
+    return { error: t.tooMany };
   }
 
   const user = getDb()
@@ -215,7 +220,7 @@ export async function requestPasswordReset(
     try {
       await sendVerificationEmail(email, code);
     } catch {
-      return { error: "We could not send the email. Please try again." };
+      return { error: t.emailSend };
     }
   }
 
@@ -226,17 +231,18 @@ export async function resetPassword(
   _prev: FormState,
   formData: FormData
 ): Promise<FormState> {
+  const t = (await getDict()).errors;
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const code = String(formData.get("code") ?? "").trim().slice(0, 6);
   const password = String(formData.get("password") ?? "");
   const confirm = String(formData.get("confirm") ?? "");
 
   if (password.length < 8 || password.length > 100)
-    return { error: "Password must be 8-100 characters." };
-  if (password !== confirm) return { error: "Passwords do not match." };
+    return { error: t.password };
+  if (password !== confirm) return { error: t.passwordMatch };
 
   if (!checkRateLimit(`reset:${email}`, 10, 15 * 60)) {
-    return { error: TOO_MANY };
+    return { error: t.tooMany };
   }
 
   const user = getDb()
@@ -244,7 +250,7 @@ export async function resetPassword(
     .get(email) as { id: number } | undefined;
 
   if (!user || !consumeVerificationCode(user.id, code, "reset")) {
-    return { error: "Invalid or expired code. Please try again." };
+    return { error: t.badCode };
   }
 
   applyPasswordReset(user.id, password);

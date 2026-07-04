@@ -5,14 +5,16 @@ import { randomBytes } from "node:crypto";
 import { getDb } from "../db";
 import { getCurrentUser } from "../auth";
 import { checkRateLimit } from "../rate-limit";
+import { getDict } from "../i18n";
 import type { FormState } from "./auth";
 
 export async function createSurvey(
   _prev: FormState,
   formData: FormData
 ): Promise<FormState> {
+  const t = (await getDict()).errors;
   const user = await getCurrentUser();
-  if (!user) return { error: "Please sign in first." };
+  if (!user) return { error: t.signInFirst };
 
   const title = String(formData.get("title") ?? "").trim().slice(0, 200);
   const questions = String(formData.get("questions") ?? "")
@@ -21,9 +23,9 @@ export async function createSurvey(
     .filter(Boolean)
     .slice(0, 50);
 
-  if (title.length < 3) return { error: "Please enter a survey title." };
+  if (title.length < 3) return { error: t.surveyTitle };
   if (questions.length === 0)
-    return { error: "Please add at least one question (one per line)." };
+    return { error: t.surveyQuestions };
 
   const id = randomBytes(6).toString("base64url");
   getDb()
@@ -40,17 +42,18 @@ async function setSurveyStatus(
   surveyId: string,
   status: "active" | "closed"
 ): Promise<FormState> {
+  const t = (await getDict()).errors;
   const user = await getCurrentUser();
-  if (!user) return { error: "Please sign in first." };
+  if (!user) return { error: t.signInFirst };
 
   const db = getDb();
   const survey = db
     .prepare("SELECT owner_id, status FROM surveys WHERE id = ?")
     .get(surveyId) as { owner_id: number; status: string } | undefined;
 
-  if (!survey) return { error: "Survey not found." };
+  if (!survey) return { error: t.surveyNotFound };
   if (survey.owner_id !== user.id && user.role !== "admin") {
-    return { error: "You do not have access to this survey." };
+    return { error: t.surveyNoAccess };
   }
 
   if (status === "active") {
@@ -85,11 +88,12 @@ export async function submitResponse(
   _prev: SubmitState,
   formData: FormData
 ): Promise<SubmitState> {
+  const t = (await getDict()).errors;
   const surveyId = String(formData.get("surveyId") ?? "").slice(0, 32);
 
   // Slow down automated spam on public survey links.
   if (!checkRateLimit(`respond:${surveyId}`, 30, 60)) {
-    return { error: "Too many submissions right now. Please try again in a minute." };
+    return { error: t.submitLimit };
   }
 
   const db = getDb();
@@ -97,9 +101,9 @@ export async function submitResponse(
     .prepare("SELECT questions, status FROM surveys WHERE id = ?")
     .get(surveyId) as { questions: string; status: string } | undefined;
 
-  if (!survey) return { error: "Survey not found." };
+  if (!survey) return { error: t.surveyNotFound };
   if (survey.status !== "active")
-    return { error: "This survey is not accepting responses." };
+    return { error: t.surveyClosed };
 
   const questions = JSON.parse(survey.questions) as string[];
   const answers = questions.map((_, index) =>
@@ -107,7 +111,7 @@ export async function submitResponse(
   );
 
   if (answers.every((answer) => !answer)) {
-    return { error: "Please answer at least one question." };
+    return { error: t.answerSomething };
   }
 
   db.prepare("INSERT INTO responses (survey_id, answers) VALUES (?, ?)").run(

@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getDb } from "@/lib/db";
+import { getDict, getLocale } from "@/lib/i18n";
 import VerifyForm from "./verify-form";
 
 export default async function VerifyPage({
@@ -9,6 +10,9 @@ export default async function VerifyPage({
 }) {
   const { email } = await searchParams;
   if (!email) redirect("/signup");
+
+  const t = await getDict();
+  const locale = await getLocale();
 
   // Local development fallback: without an email provider configured,
   // surface the pending code so the flow stays testable end-to-end.
@@ -26,5 +30,14 @@ export default async function VerifyPage({
     devCode = row?.code ?? null;
   }
 
-  return <VerifyForm email={email} devCode={devCode} />;
+  return (
+    <VerifyForm
+      email={email}
+      devCode={devCode}
+      t={t.verify}
+      common={t.common}
+      dir={t.dir}
+      locale={locale}
+    />
+  );
 }

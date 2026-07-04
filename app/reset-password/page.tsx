@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getDb } from "@/lib/db";
+import { getDict, getLocale } from "@/lib/i18n";
 import ResetForm from "./reset-form";
 
 export default async function ResetPasswordPage({
@@ -9,6 +10,9 @@ export default async function ResetPasswordPage({
 }) {
   const { email } = await searchParams;
   if (!email) redirect("/forgot-password");
+
+  const t = await getDict();
+  const locale = await getLocale();
 
   // Local development fallback: without an email provider configured,
   // surface the pending reset code so the flow stays testable end-to-end.
@@ -26,5 +30,14 @@ export default async function ResetPasswordPage({
     devCode = row?.code ?? null;
   }
 
-  return <ResetForm email={email} devCode={devCode} />;
+  return (
+    <ResetForm
+      email={email}
+      devCode={devCode}
+      t={t.reset}
+      common={t.common}
+      dir={t.dir}
+      locale={locale}
+    />
+  );
 }

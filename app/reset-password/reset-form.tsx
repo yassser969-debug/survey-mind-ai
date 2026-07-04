@@ -3,18 +3,31 @@
 import Link from "next/link";
 import { useActionState } from "react";
 import { resetPassword } from "@/lib/actions/auth";
+import type { Dict } from "@/lib/i18n/dictionaries";
+import type { Locale } from "@/lib/i18n";
+import LanguageSwitcher from "@/app/components/language-switcher";
 
 export default function ResetForm({
   email,
   devCode,
+  t,
+  common,
+  dir,
+  locale,
 }: {
   email: string;
   devCode: string | null;
+  t: Dict["reset"];
+  common: Dict["common"];
+  dir: "ltr" | "rtl";
+  locale: Locale;
 }) {
   const [state, formAction, pending] = useActionState(resetPassword, null);
 
+  const [before, after] = t.subtitle.split("{email}");
+
   return (
-    <main className="min-h-screen bg-[#050712] px-6 py-10 text-white">
+    <main dir={dir} className="min-h-screen bg-[#050712] px-6 py-10 text-white">
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
         <div className="absolute left-1/2 top-[-18rem] h-[38rem] w-[38rem] -translate-x-1/2 rounded-full bg-blue-500/20 blur-[140px]" />
         <div className="absolute right-[-10rem] bottom-[-12rem] h-[32rem] w-[32rem] rounded-full bg-violet-500/20 blur-[130px]" />
@@ -22,29 +35,34 @@ export default function ResetForm({
 
       <section className="relative mx-auto flex min-h-[calc(100vh-80px)] max-w-5xl items-center justify-center">
         <div className="w-full max-w-xl rounded-[2.5rem] border border-white/10 bg-white/[0.06] p-8 shadow-2xl backdrop-blur-2xl md:p-12">
-          <Link href="/" className="mb-10 flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-400 via-violet-400 to-emerald-300 text-lg font-black text-[#050712]">
-              S
-            </div>
-            <div>
-              <p className="font-black">SurveyMind AI</p>
-              <p className="text-sm text-slate-400">AI survey intelligence</p>
-            </div>
-          </Link>
+          <div className="mb-10 flex items-start justify-between gap-4">
+            <Link href="/" className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-400 via-violet-400 to-emerald-300 text-lg font-black text-[#050712]">
+                S
+              </div>
+              <div>
+                <p className="font-black">{common.appName}</p>
+                <p className="text-sm text-slate-400">{common.tagline}</p>
+              </div>
+            </Link>
+            <LanguageSwitcher current={locale} />
+          </div>
 
-          <h1 className="text-4xl font-black tracking-[-0.03em]">
-            Set a new password
-          </h1>
+          <h1 className="text-4xl font-black tracking-[-0.03em]">{t.title}</h1>
           <p className="mt-3 leading-7 text-slate-400">
-            If an account exists for{" "}
-            <span className="font-bold text-white">{email}</span>, we sent it a
-            6-digit code. Enter it below with your new password.
+            {before}
+            <span dir="ltr" className="font-bold text-white">
+              {email}
+            </span>
+            {after}
           </p>
 
           {devCode && (
             <p className="mt-5 rounded-2xl border border-amber-300/30 bg-amber-400/10 px-4 py-3 text-sm font-bold text-amber-200">
-              Development mode (no email provider configured) — your code is:{" "}
-              <span className="text-lg tracking-[0.3em]">{devCode}</span>
+              {t.devNote}{" "}
+              <span dir="ltr" className="text-lg tracking-[0.3em]">
+                {devCode}
+              </span>
             </p>
           )}
 
@@ -53,12 +71,13 @@ export default function ResetForm({
 
             <div>
               <label className="text-sm font-bold text-slate-300">
-                Reset code
+                {t.code}
               </label>
               <input
                 type="text"
                 name="code"
                 required
+                dir="ltr"
                 inputMode="numeric"
                 pattern="[0-9]{6}"
                 maxLength={6}
@@ -70,27 +89,27 @@ export default function ResetForm({
             <div className="grid gap-5 sm:grid-cols-2">
               <div>
                 <label className="text-sm font-bold text-slate-300">
-                  New password
+                  {t.password}
                 </label>
                 <input
                   type="password"
                   name="password"
                   required
                   minLength={8}
-                  placeholder="At least 8 characters"
+                  placeholder={t.passwordPh}
                   className="mt-2 w-full rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3 text-white outline-none placeholder:text-slate-500 focus:border-blue-300"
                 />
               </div>
               <div>
                 <label className="text-sm font-bold text-slate-300">
-                  Confirm password
+                  {t.confirm}
                 </label>
                 <input
                   type="password"
                   name="confirm"
                   required
                   minLength={8}
-                  placeholder="Repeat your password"
+                  placeholder={t.confirmPh}
                   className="mt-2 w-full rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3 text-white outline-none placeholder:text-slate-500 focus:border-blue-300"
                 />
               </div>
@@ -107,7 +126,7 @@ export default function ResetForm({
               disabled={pending}
               className="block w-full rounded-full bg-gradient-to-r from-blue-500 via-violet-500 to-blue-500 px-6 py-4 text-center font-black shadow-2xl shadow-blue-500/25 transition hover:scale-[1.01] disabled:opacity-60"
             >
-              {pending ? "Updating…" : "Update password"}
+              {pending ? t.pending : t.button}
             </button>
           </form>
         </div>

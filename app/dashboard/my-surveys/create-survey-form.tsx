@@ -2,8 +2,9 @@
 
 import { useActionState } from "react";
 import { createSurvey } from "@/lib/actions/surveys";
+import type { Dict } from "@/lib/i18n/dictionaries";
 
-export default function CreateSurveyForm() {
+export default function CreateSurveyForm({ t }: { t: Dict["mySurveys"] }) {
   const [state, formAction, pending] = useActionState(createSurvey, null);
 
   return (
@@ -11,28 +12,31 @@ export default function CreateSurveyForm() {
       action={formAction}
       className="rounded-[2rem] border border-white/10 bg-white/[0.05] p-6"
     >
-      <h2 className="text-xl font-black">Create a new survey</h2>
+      <h2 className="text-xl font-black">{t.createTitle}</h2>
 
       <div className="mt-5">
-        <label className="text-sm font-bold text-slate-300">Title</label>
+        <label className="text-sm font-bold text-slate-300">
+          {t.fieldTitle}
+        </label>
         <input
           type="text"
           name="title"
           required
-          placeholder="e.g. Course feedback — Semester 1"
+          placeholder={t.fieldTitlePh}
           className="mt-2 w-full rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3 text-white outline-none placeholder:text-slate-500 focus:border-blue-300"
         />
       </div>
 
       <div className="mt-4">
         <label className="text-sm font-bold text-slate-300">
-          Questions <span className="text-slate-500">(one per line)</span>
+          {t.fieldQuestions}{" "}
+          <span className="text-slate-500">{t.fieldQuestionsHint}</span>
         </label>
         <textarea
           name="questions"
           required
           rows={4}
-          placeholder={"How clear were the assessment criteria?\nWhat should we improve first?"}
+          placeholder={t.fieldQuestionsPh}
           className="mt-2 w-full rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3 text-white outline-none placeholder:text-slate-500 focus:border-blue-300"
         />
       </div>
@@ -48,7 +52,7 @@ export default function CreateSurveyForm() {
         disabled={pending}
         className="mt-5 rounded-full bg-gradient-to-r from-blue-500 via-violet-500 to-emerald-400 px-6 py-3 font-black shadow-xl shadow-blue-500/20 transition hover:-translate-y-0.5 disabled:opacity-60"
       >
-        {pending ? "Creating…" : "Create survey"}
+        {pending ? t.creating : t.createButton}
       </button>
     </form>
   );

@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { getDb } from "@/lib/db";
+import { getDict } from "@/lib/i18n";
+import { fmt } from "@/lib/i18n/format";
 import JoinBranchForm from "./join-branch-form";
 
 type JoinedBranch = { name: string; lecturer: string; joined_at: string };
@@ -9,6 +11,8 @@ export default async function JoinPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
   if (user.role !== "student") redirect("/dashboard");
+
+  const t = (await getDict()).join;
 
   const branches = getDb()
     .prepare(
@@ -23,18 +27,16 @@ export default async function JoinPage() {
 
   return (
     <main className="mx-auto max-w-3xl px-5 py-10">
-      <h1 className="text-3xl font-black tracking-tight">Join a branch</h1>
-      <p className="mt-2 text-slate-400">
-        Once you join, your lecturer can follow your surveys and progress.
-      </p>
+      <h1 className="text-3xl font-black tracking-tight">{t.title}</h1>
+      <p className="mt-2 text-slate-400">{t.subtitle}</p>
 
       <div className="mt-8">
-        <JoinBranchForm />
+        <JoinBranchForm t={t} />
       </div>
 
       {branches.length > 0 && (
         <section className="mt-8 rounded-[2rem] border border-white/10 bg-white/[0.05] p-6">
-          <h2 className="text-xl font-black">Your branches</h2>
+          <h2 className="text-xl font-black">{t.yourBranches}</h2>
           <ul className="mt-4 space-y-3">
             {branches.map((branch, index) => (
               <li
@@ -43,7 +45,7 @@ export default async function JoinPage() {
               >
                 <span className="font-bold">{branch.name}</span>
                 <span className="text-sm text-slate-400">
-                  Lecturer: {branch.lecturer}
+                  {fmt(t.lecturer, { name: branch.lecturer })}
                 </span>
               </li>
             ))}

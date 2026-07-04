@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { getDb } from "@/lib/db";
+import { getDict } from "@/lib/i18n";
 
 type ResponseRow = {
   id: number;
@@ -14,6 +15,7 @@ export default async function ResponsesPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
+  const t = (await getDict()).responses;
   const db = getDb();
 
   const stats = db
@@ -40,19 +42,17 @@ export default async function ResponsesPage() {
 
   return (
     <main className="mx-auto max-w-5xl px-5 py-10">
-      <h1 className="text-3xl font-black tracking-tight">Responses</h1>
-      <p className="mt-2 text-slate-400">
-        Every answer collected across your surveys, newest first.
-      </p>
+      <h1 className="text-3xl font-black tracking-tight">{t.title}</h1>
+      <p className="mt-2 text-slate-400">{t.subtitle}</p>
 
       <div className="mt-8 grid gap-4 sm:grid-cols-2">
         <div className="rounded-[2rem] border border-white/10 bg-white/[0.05] p-6">
-          <p className="text-sm font-bold text-slate-400">Total responses</p>
+          <p className="text-sm font-bold text-slate-400">{t.total}</p>
           <p className="mt-2 text-4xl font-black">{stats.total}</p>
         </div>
         <div className="rounded-[2rem] border border-white/10 bg-white/[0.05] p-6">
           <p className="text-sm font-bold text-slate-400">
-            Surveys receiving answers
+            {t.surveysReceiving}
           </p>
           <p className="mt-2 text-4xl font-black">
             {stats.surveys_with_responses}
@@ -63,7 +63,7 @@ export default async function ResponsesPage() {
       <div className="mt-8 space-y-4">
         {responses.length === 0 && (
           <p className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-8 text-center text-slate-400">
-            No responses yet — activate a survey and share its link.
+            {t.empty}
           </p>
         )}
 
@@ -77,7 +77,7 @@ export default async function ResponsesPage() {
             >
               <summary className="flex cursor-pointer flex-wrap items-center justify-between gap-2">
                 <span className="font-black">{response.survey_title}</span>
-                <span className="text-xs font-bold text-slate-500">
+                <span dir="ltr" className="text-xs font-bold text-slate-500">
                   #{response.id} · {response.submitted_at} UTC
                 </span>
               </summary>

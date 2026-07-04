@@ -1,9 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 
 type Locale = "en" | "ar" | "es";
+
+function readCookieLocale(): Locale | null {
+  const match = document.cookie.match(/(?:^|; )sm_locale=(\w+)/);
+  return match && (match[1] === "en" || match[1] === "ar" || match[1] === "es")
+    ? (match[1] as Locale)
+    : null;
+}
+
+function persistLocale(code: Locale) {
+  document.cookie = `sm_locale=${code};path=/;max-age=31536000;samesite=lax`;
+}
 
 const languages: Array<{
   code: Locale;
@@ -926,7 +937,20 @@ const content = {
 
 export default function Home() {
   const [languageOpen, setLanguageOpen] = useState(false);
-  const [locale, setLocale] = useState<Locale>("en");
+
+  // The saved preference (shared with the rest of the platform via cookie).
+  const cookieLocale = useSyncExternalStore(
+    () => () => {},
+    readCookieLocale,
+    () => null
+  );
+  const [override, setOverride] = useState<Locale | null>(null);
+  const locale = override ?? cookieLocale ?? "en";
+
+  const chooseLocale = (code: Locale) => {
+    setOverride(code);
+    persistLocale(code);
+  };
 
   const page = content[locale];
   const currentLanguage = languages.find(
@@ -1015,7 +1039,7 @@ export default function Home() {
                         type="button"
                         key={language.code}
                         onClick={() => {
-                          setLocale(language.code);
+                          chooseLocale(language.code);
                           setLanguageOpen(false);
                         }}
                         className={`block w-full rounded-xl px-3 py-2 text-sm font-semibold text-slate-200 transition hover:bg-white/10 ${

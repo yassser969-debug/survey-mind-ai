@@ -2,10 +2,13 @@
 
 import Link from "next/link";
 import { useActionState } from "react";
-import { login } from "@/lib/actions/auth";
+import { requestPasswordReset } from "@/lib/actions/auth";
 
-export default function LoginPage() {
-  const [state, formAction, pending] = useActionState(login, null);
+export default function ForgotPasswordPage() {
+  const [state, formAction, pending] = useActionState(
+    requestPasswordReset,
+    null
+  );
 
   return (
     <main className="min-h-screen bg-[#050712] px-6 py-10 text-white">
@@ -27,39 +30,22 @@ export default function LoginPage() {
           </Link>
 
           <h1 className="text-4xl font-black tracking-[-0.03em]">
-            Welcome back
+            Forgot your password?
           </h1>
-          <p className="mt-3 text-slate-400">
-            Sign in to continue to your survey workspace.
+          <p className="mt-3 leading-7 text-slate-400">
+            Enter your email and we will send you a 6-digit code to reset it.
           </p>
 
           <form action={formAction} className="mt-10 space-y-5">
             <div>
-              <label className="text-sm font-bold text-slate-300">Email address</label>
+              <label className="text-sm font-bold text-slate-300">
+                Email address
+              </label>
               <input
                 type="email"
                 name="email"
                 required
                 placeholder="you@example.com"
-                className="mt-2 w-full rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3 text-white outline-none placeholder:text-slate-500 focus:border-blue-300"
-              />
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between">
-                <label className="text-sm font-bold text-slate-300">Password</label>
-                <Link
-                  href="/forgot-password"
-                  className="text-xs font-bold text-blue-200 hover:text-white"
-                >
-                  Forgot password?
-                </Link>
-              </div>
-              <input
-                type="password"
-                name="password"
-                required
-                placeholder="Enter your password"
                 className="mt-2 w-full rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3 text-white outline-none placeholder:text-slate-500 focus:border-blue-300"
               />
             </div>
@@ -75,13 +61,16 @@ export default function LoginPage() {
               disabled={pending}
               className="block w-full rounded-full bg-gradient-to-r from-blue-500 via-violet-500 to-blue-500 px-6 py-4 text-center font-black shadow-2xl shadow-blue-500/25 transition hover:scale-[1.01] disabled:opacity-60"
             >
-              {pending ? "Signing in…" : "Sign in"}
+              {pending ? "Sending…" : "Send reset code"}
             </button>
 
             <p className="text-center text-sm text-slate-400">
-              New to SurveyMind AI?{" "}
-              <Link href="/signup" className="font-bold text-blue-200 hover:text-white">
-                Create account
+              Remembered it?{" "}
+              <Link
+                href="/login"
+                className="font-bold text-blue-200 hover:text-white"
+              >
+                Sign in
               </Link>
             </p>
           </form>

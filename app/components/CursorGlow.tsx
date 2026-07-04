@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
 
 const INTERACTIVE_SELECTOR =
   "a, button, [role='button'], summary, label, [data-cursor='pointer']";
@@ -8,22 +8,34 @@ const INTERACTIVE_SELECTOR =
 const TEXT_FIELD_SELECTOR =
   "input, textarea, select, [contenteditable='true']";
 
+function subscribeToPointerMedia(onChange: () => void) {
+  const finePointer = window.matchMedia("(pointer: fine)");
+  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+  finePointer.addEventListener("change", onChange);
+  reducedMotion.addEventListener("change", onChange);
+  return () => {
+    finePointer.removeEventListener("change", onChange);
+    reducedMotion.removeEventListener("change", onChange);
+  };
+}
+
+function isCursorSupported() {
+  return (
+    window.matchMedia("(pointer: fine)").matches &&
+    !window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  );
+}
+
 export default function CursorGlow() {
-  const [enabled, setEnabled] = useState(false);
+  // false during SSR, then tracks the pointer/motion media queries live.
+  const enabled = useSyncExternalStore(
+    subscribeToPointerMedia,
+    isCursorSupported,
+    () => false
+  );
   const dotRef = useRef<HTMLDivElement | null>(null);
   const ringRef = useRef<HTMLDivElement | null>(null);
   const spotlightRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    const finePointer = window.matchMedia("(pointer: fine)");
-    const reducedMotion = window.matchMedia(
-      "(prefers-reduced-motion: reduce)"
-    );
-
-    if (finePointer.matches && !reducedMotion.matches) {
-      setEnabled(true);
-    }
-  }, []);
 
   useEffect(() => {
     if (!enabled) return;

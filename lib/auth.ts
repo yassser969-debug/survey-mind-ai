@@ -1,7 +1,7 @@
 import "server-only";
 
 import { cookies } from "next/headers";
-import { randomBytes } from "node:crypto";
+import { randomBytes, randomInt } from "node:crypto";
 import bcrypt from "bcryptjs";
 import { getDb } from "./db";
 
@@ -24,6 +24,17 @@ export function hashPassword(password: string): string {
 
 export function verifyPassword(password: string, hash: string): boolean {
   return bcrypt.compareSync(password, hash);
+}
+
+// Compared against when the account does not exist, so login takes the
+// same time either way and attackers cannot probe which emails are registered.
+const DUMMY_HASH = bcrypt.hashSync("timing-equalizer-placeholder", 10);
+
+export function verifyPasswordSafe(
+  password: string,
+  hash: string | undefined
+): boolean {
+  return bcrypt.compareSync(password, hash ?? DUMMY_HASH) && hash !== undefined;
 }
 
 export async function createSession(userId: number): Promise<void> {
@@ -93,44 +104,75 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
   };
 }
 
-export function generateVerificationCode(userId: number): string {
-  const code = String(Math.floor(100000 + Math.random() * 900000));
+export type CodePurpose = "verify" | "reset";
+
+const MAX_CODE_ATTEMPTS = 5;
+
+export function generateVerificationCode(
+  userId: number,
+  purpose: CodePurpose = "verify"
+): string {
+  const code = String(randomInt(100000, 1000000));
   const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
   const db = getDb();
   db.prepare(
-    "UPDATE email_codes SET consumed_at = datetime('now') WHERE user_id = ? AND consumed_at IS NULL"
-  ).run(userId);
+    "UPDATE email_codes SET consumed_at = datetime('now') WHERE user_id = ? AND purpose = ? AND consumed_at IS NULL"
+  ).run(userId, purpose);
   db.prepare(
-    "INSERT INTO email_codes (user_id, code, expires_at) VALUES (?, ?, ?)"
-  ).run(userId, code, expiresAt.toISOString());
+    "INSERT INTO email_codes (user_id, code, purpose, expires_at) VALUES (?, ?, ?, ?)"
+  ).run(userId, code, purpose, expiresAt.toISOString());
 
   return code;
 }
 
 export function consumeVerificationCode(
   userId: number,
-  code: string
+  code: string,
+  purpose: CodePurpose = "verify"
 ): boolean {
   const db = getDb();
   const row = db
     .prepare(
-      `SELECT id FROM email_codes
-       WHERE user_id = ? AND code = ? AND consumed_at IS NULL
-         AND expires_at > datetime('now')`
+      `SELECT id, code, attempts FROM email_codes
+       WHERE user_id = ? AND purpose = ? AND consumed_at IS NULL
+         AND expires_at > datetime('now')
+       ORDER BY id DESC LIMIT 1`
     )
-    .get(userId, code.trim()) as { id: number } | undefined;
+    .get(userId, purpose) as
+    | { id: number; code: string; attempts: number }
+    | undefined;
 
-  if (!row) return false;
+  if (!row || row.attempts >= MAX_CODE_ATTEMPTS) return false;
+
+  if (row.code !== code.trim()) {
+    db.prepare(
+      "UPDATE email_codes SET attempts = attempts + 1 WHERE id = ?"
+    ).run(row.id);
+    return false;
+  }
 
   db.prepare(
     "UPDATE email_codes SET consumed_at = datetime('now') WHERE id = ?"
   ).run(row.id);
-  db.prepare(
-    "UPDATE users SET email_verified_at = datetime('now') WHERE id = ?"
-  ).run(userId);
+
+  if (purpose === "verify") {
+    db.prepare(
+      "UPDATE users SET email_verified_at = datetime('now') WHERE id = ?"
+    ).run(userId);
+  }
 
   return true;
+}
+
+/** Updates the password and signs the user out of every device. */
+export function resetPassword(userId: number, newPassword: string): void {
+  const db = getDb();
+  db.prepare("UPDATE users SET password_hash = ? WHERE id = ?").run(
+    hashPassword(newPassword),
+    userId
+  );
+  db.prepare("DELETE FROM sessions WHERE user_id = ?").run(userId);
 }
 
 /** The platform founder — the one account with every capability. */

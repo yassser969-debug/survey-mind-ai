@@ -120,16 +120,31 @@ export default function SignupPage() {
                 />
               </div>
 
-              <div>
-                <label className="text-sm font-bold text-slate-300">Password</label>
-                <input
-                  type="password"
-                  name="password"
-                  required
-                  minLength={8}
-                  placeholder="At least 8 characters"
-                  className="mt-2 w-full rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3 text-white outline-none placeholder:text-slate-500 focus:border-blue-300"
-                />
+              <div className="grid gap-5 sm:grid-cols-2">
+                <div>
+                  <label className="text-sm font-bold text-slate-300">Password</label>
+                  <input
+                    type="password"
+                    name="password"
+                    required
+                    minLength={8}
+                    placeholder="At least 8 characters"
+                    className="mt-2 w-full rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3 text-white outline-none placeholder:text-slate-500 focus:border-blue-300"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-bold text-slate-300">
+                    Confirm password
+                  </label>
+                  <input
+                    type="password"
+                    name="confirm"
+                    required
+                    minLength={8}
+                    placeholder="Repeat your password"
+                    className="mt-2 w-full rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3 text-white outline-none placeholder:text-slate-500 focus:border-blue-300"
+                  />
+                </div>
               </div>
 
               {state?.error && (

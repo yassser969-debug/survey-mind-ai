@@ -25,7 +25,7 @@ export async function createBranch(
     return { error: "Only lecturers can create a branch." };
   }
 
-  const name = String(formData.get("name") ?? "").trim();
+  const name = String(formData.get("name") ?? "").trim().slice(0, 100);
   if (name.length < 2) return { error: "Please enter a branch name." };
 
   const db = getDb();

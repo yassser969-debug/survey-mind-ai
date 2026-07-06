@@ -62,4 +62,12 @@ db.exec(`
     FOREIGN KEY (response_id) REFERENCES responses(id),
     FOREIGN KEY (question_id) REFERENCES questions(id)
   );
+
+  CREATE TABLE IF NOT EXISTS password_resets (
+    token TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    expires_at TEXT NOT NULL,
+    used INTEGER NOT NULL DEFAULT 0,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  );
 `);

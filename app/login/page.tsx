@@ -3,9 +3,11 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useLang } from "@/lib/i18n-client";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { t } = useLang();
   const [mode, setMode] = useState<"login" | "register">("login");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -45,7 +47,7 @@ export default function LoginPage() {
     <main className="relative flex min-h-screen items-center justify-center bg-[#050712] px-4 text-white">
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
         <div className="absolute left-1/2 top-[-16rem] h-[36rem] w-[36rem] -translate-x-1/2 rounded-full bg-blue-500/20 blur-[140px]" />
-        <div className="absolute bottom-[-14rem] right-[-10rem] h-[32rem] w-[32rem] rounded-full bg-violet-500/20 blur-[130px]" />
+        <div className="absolute bottom-[-14rem] end-[-10rem] h-[32rem] w-[32rem] rounded-full bg-violet-500/20 blur-[130px]" />
       </div>
 
       <div className="relative w-full max-w-md">
@@ -58,19 +60,17 @@ export default function LoginPage() {
 
         <div className="rounded-[2rem] border border-white/10 bg-white/[0.06] p-8 backdrop-blur-2xl">
           <h1 className="text-2xl font-black tracking-tight">
-            {mode === "login" ? "Welcome back" : "Create your account"}
+            {mode === "login" ? t.welcomeBack : t.createYourAccount}
           </h1>
           <p className="mt-2 text-sm text-slate-400">
-            {mode === "login"
-              ? "Sign in to manage your surveys and AI insights."
-              : "Start building surveys and collecting AI-powered insights."}
+            {mode === "login" ? t.signInSubtitle : t.registerSubtitle}
           </p>
 
           <form className="mt-8 space-y-4" onSubmit={handleSubmit}>
             {mode === "register" && (
               <div>
                 <label className="text-xs font-black uppercase tracking-widest text-slate-400">
-                  Name
+                  {t.name}
                 </label>
                 <input
                   type="text"
@@ -85,7 +85,7 @@ export default function LoginPage() {
 
             <div>
               <label className="text-xs font-black uppercase tracking-widest text-slate-400">
-                Email
+                {t.email}
               </label>
               <input
                 type="email"
@@ -99,7 +99,7 @@ export default function LoginPage() {
 
             <div>
               <label className="text-xs font-black uppercase tracking-widest text-slate-400">
-                Password
+                {t.password}
               </label>
               <input
                 type="password"
@@ -119,29 +119,38 @@ export default function LoginPage() {
               disabled={loading}
               className="w-full rounded-full bg-gradient-to-r from-blue-500 via-violet-500 to-blue-500 py-3 text-sm font-black shadow-lg shadow-blue-500/25 transition hover:scale-[1.02] disabled:opacity-60"
             >
-              {loading ? "Please wait…" : mode === "login" ? "Sign in" : "Create account"}
+              {loading ? t.pleaseWait : mode === "login" ? t.signIn : t.createAccount}
             </button>
+
+            {mode === "login" && (
+              <Link
+                href="/forgot-password"
+                className="block text-center text-sm font-bold text-slate-400 hover:text-slate-200"
+              >
+                {t.forgotPassword}
+              </Link>
+            )}
           </form>
 
           <p className="mt-6 text-center text-sm text-slate-400">
             {mode === "login" ? (
               <>
-                New to SurveyMind AI?{" "}
+                {t.newToApp}{" "}
                 <button
                   onClick={() => setMode("register")}
                   className="font-bold text-blue-300 hover:text-blue-200"
                 >
-                  Create an account
+                  {t.createAccount}
                 </button>
               </>
             ) : (
               <>
-                Already have an account?{" "}
+                {t.alreadyHaveAccount}{" "}
                 <button
                   onClick={() => setMode("login")}
                   className="font-bold text-blue-300 hover:text-blue-200"
                 >
-                  Sign in
+                  {t.signIn}
                 </button>
               </>
             )}

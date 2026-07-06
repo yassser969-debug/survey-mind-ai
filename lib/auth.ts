@@ -78,6 +78,42 @@ export async function clearSession() {
   store.delete(SESSION_COOKIE);
 }
 
+const RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
+
+export function createPasswordResetToken(email: string): string | null {
+  const user = db.prepare(`SELECT id FROM users WHERE email = ?`).get(email) as
+    | { id: string }
+    | undefined;
+  if (!user) return null;
+
+  const token = randomBytes(32).toString("hex");
+  const expiresAt = new Date(Date.now() + RESET_TOKEN_TTL_MS).toISOString();
+
+  db.prepare(`INSERT INTO password_resets (token, user_id, expires_at, used) VALUES (?, ?, ?, 0)`).run(
+    token,
+    user.id,
+    expiresAt,
+  );
+
+  return token;
+}
+
+export function resetPassword(token: string, newPassword: string): boolean {
+  const row = db
+    .prepare(`SELECT user_id as userId, expires_at as expiresAt, used FROM password_resets WHERE token = ?`)
+    .get(token) as { userId: string; expiresAt: string; used: number } | undefined;
+
+  if (!row || row.used || new Date(row.expiresAt).getTime() < Date.now()) return false;
+
+  db.prepare(`UPDATE users SET password_hash = ? WHERE id = ?`).run(
+    hashPassword(newPassword),
+    row.userId,
+  );
+  db.prepare(`UPDATE password_resets SET used = 1 WHERE token = ?`).run(token);
+
+  return true;
+}
+
 export async function getSession(): Promise<User | null> {
   const store = await cookies();
   const token = store.get(SESSION_COOKIE)?.value;

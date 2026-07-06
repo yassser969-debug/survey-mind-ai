@@ -1,54 +1,49 @@
 import Link from "next/link";
+import { getDict, getLang } from "@/lib/i18n";
+import LanguageToggle from "./language-toggle";
 
-const features = [
-  {
-    title: "Build smarter surveys",
-    text: "Create surveys for students, lecturers, researchers, staff, and quality teams with a clean guided flow.",
-  },
-  {
-    title: "Collect responses easily",
-    text: "Share one link, collect responses, and keep everything organised in one calm workspace.",
-  },
-  {
-    title: "Analyse with AI",
-    text: "Turn raw responses into summaries, themes, patterns, and academic-style insights.",
-  },
-  {
-    title: "Export what matters",
-    text: "Prepare reports for Excel, PDF, SPSS, NVivo, and presentations as the platform grows.",
-  },
-];
+export default async function Home() {
+  const lang = await getLang();
+  const t = getDict(lang);
 
-const audiences = ["Students", "Lecturers", "Researchers", "Quality teams"];
+  const features = t.featureTitles.map((title, i) => ({ title, text: t.featureTexts[i] }));
 
-const plans = [
-  {
-    name: "Free",
-    price: "€0",
-    description: "For trying the platform.",
-    items: ["3 surveys", "100 responses", "5 AI analyses", "Basic export"],
-  },
-  {
-    name: "Student",
-    price: "€4.99/mo",
-    description: "For university work and small research projects.",
-    items: ["10 surveys", "1,000 responses", "30 AI analyses", "PDF reports planned"],
-  },
-  {
-    name: "Researcher",
-    price: "€12.99/mo",
-    description: "For deeper analysis and academic reporting.",
-    items: ["50 surveys", "5,000 responses", "150 AI analyses", "SPSS & NVivo planned"],
-  },
-];
+  const plans = [
+    {
+      name: "Free",
+      price: "€0",
+      description: lang === "ar" ? "لتجربة المنصة." : "For trying the platform.",
+      items:
+        lang === "ar"
+          ? ["3 استبيانات", "100 رد", "5 تحليلات AI", "تصدير أساسي"]
+          : ["3 surveys", "100 responses", "5 AI analyses", "Basic export"],
+    },
+    {
+      name: "Student",
+      price: "€4.99/mo",
+      description: lang === "ar" ? "للأعمال الجامعية والمشاريع البحثية الصغيرة." : "For university work and small research projects.",
+      items:
+        lang === "ar"
+          ? ["10 استبيانات", "1,000 رد", "30 تحليل AI", "تقارير PDF قريبًا"]
+          : ["10 surveys", "1,000 responses", "30 AI analyses", "PDF reports planned"],
+    },
+    {
+      name: "Researcher",
+      price: "€12.99/mo",
+      description: lang === "ar" ? "لتحليل أعمق وتقارير أكاديمية." : "For deeper analysis and academic reporting.",
+      items:
+        lang === "ar"
+          ? ["50 استبيان", "5,000 رد", "150 تحليل AI", "SPSS وNVivo قريبًا"]
+          : ["50 surveys", "5,000 responses", "150 AI analyses", "SPSS & NVivo planned"],
+    },
+  ];
 
-export default function Home() {
   return (
     <main className="min-h-screen bg-[#050712] text-white">
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
         <div className="absolute left-1/2 top-[-20rem] h-[42rem] w-[42rem] -translate-x-1/2 rounded-full bg-blue-500/20 blur-[140px]" />
-        <div className="absolute right-[-12rem] top-[14rem] h-[32rem] w-[32rem] rounded-full bg-violet-500/20 blur-[130px]" />
-        <div className="absolute bottom-[-14rem] left-[-10rem] h-[36rem] w-[36rem] rounded-full bg-emerald-400/10 blur-[140px]" />
+        <div className="absolute end-[-12rem] top-[14rem] h-[32rem] w-[32rem] rounded-full bg-violet-500/20 blur-[130px]" />
+        <div className="absolute bottom-[-14rem] start-[-10rem] h-[36rem] w-[36rem] rounded-full bg-emerald-400/10 blur-[140px]" />
       </div>
 
       <section className="relative mx-auto min-h-screen max-w-7xl px-6 py-6">
@@ -65,25 +60,26 @@ export default function Home() {
 
           <div className="hidden items-center gap-8 text-sm text-slate-300 md:flex">
             <a href="#features" className="hover:text-white">
-              Features
+              {t.navFeatures}
             </a>
             <a href="#audience" className="hover:text-white">
-              Use cases
+              {t.navUseCases}
             </a>
             <a href="#pricing" className="hover:text-white">
-              Pricing
+              {t.navPricing}
             </a>
           </div>
 
           <div className="flex items-center gap-3">
-            <button className="hidden rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-semibold text-slate-200 hover:border-white/25 sm:block">
-              🌐 EN
-            </button>
+            <LanguageToggle
+              lang={lang}
+              className="hidden rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-semibold text-slate-200 hover:border-white/25 sm:block"
+            />
             <Link
               href="/login"
               className="rounded-full bg-white px-5 py-2.5 text-sm font-black text-[#050712] hover:bg-blue-100"
             >
-              Start free
+              {t.startFree}
             </Link>
           </div>
         </nav>
@@ -92,20 +88,18 @@ export default function Home() {
           <div>
             <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-4 py-2 text-sm text-slate-300 backdrop-blur">
               <span className="h-2 w-2 rounded-full bg-emerald-300" />
-              Built for feedback, research, and quality improvement
+              {t.heroBadge}
             </div>
 
             <h1 className="max-w-5xl text-5xl font-black leading-[0.98] tracking-[-0.05em] md:text-7xl lg:text-8xl">
-              Forms are only the start.
+              {t.heroTitle1}
               <span className="block bg-gradient-to-r from-blue-200 via-violet-200 to-emerald-200 bg-clip-text text-transparent">
-                Insights are the goal.
+                {t.heroTitle2}
               </span>
             </h1>
 
             <p className="mt-8 max-w-2xl text-lg leading-8 text-slate-300 md:text-xl">
-              SurveyMind AI helps users create surveys, collect responses, analyse
-              feedback, and turn results into clear reports — without getting lost in
-              spreadsheets.
+              {t.heroSubtitle}
             </p>
 
             <div className="mt-10 flex flex-col gap-4 sm:flex-row">
@@ -113,28 +107,28 @@ export default function Home() {
                 href="/login"
                 className="rounded-full bg-gradient-to-r from-blue-500 via-violet-500 to-blue-500 px-8 py-4 text-center text-base font-black shadow-2xl shadow-blue-500/25 transition hover:scale-[1.02]"
               >
-                Start building free
+                {t.heroCtaPrimary}
               </Link>
               <Link
                 href="/s/quality-feedback-review"
                 className="rounded-full border border-white/10 bg-white/[0.04] px-8 py-4 text-center text-base font-bold text-slate-100 backdrop-blur transition hover:border-white/25"
               >
-                Watch product preview
+                {t.heroCtaSecondary}
               </Link>
             </div>
 
             <div className="mt-12 grid max-w-2xl gap-4 sm:grid-cols-3">
               <div className="rounded-3xl border border-white/10 bg-white/[0.05] p-5 backdrop-blur">
                 <p className="text-3xl font-black">3</p>
-                <p className="mt-1 text-sm text-slate-400">Languages planned</p>
+                <p className="mt-1 text-sm text-slate-400">{t.statLanguages}</p>
               </div>
               <div className="rounded-3xl border border-white/10 bg-white/[0.05] p-5 backdrop-blur">
                 <p className="text-3xl font-black">AI</p>
-                <p className="mt-1 text-sm text-slate-400">Analysis engine</p>
+                <p className="mt-1 text-sm text-slate-400">{t.statAi}</p>
               </div>
               <div className="rounded-3xl border border-white/10 bg-white/[0.05] p-5 backdrop-blur">
                 <p className="text-3xl font-black">PDF</p>
-                <p className="mt-1 text-sm text-slate-400">Reports planned</p>
+                <p className="mt-1 text-sm text-slate-400">{t.statReports}</p>
               </div>
             </div>
           </div>
@@ -146,21 +140,21 @@ export default function Home() {
               <div className="rounded-[2rem] bg-[#f8fafc] p-5 text-slate-950">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-bold text-slate-500">Workspace</p>
+                    <p className="text-sm font-bold text-slate-500">{t.workspace}</p>
                     <h2 className="mt-1 text-2xl font-black tracking-tight">
-                      Quality Feedback Review
+                      {lang === "ar" ? "مراجعة تغذية راجعة الجودة" : "Quality Feedback Review"}
                     </h2>
                   </div>
                   <span className="rounded-full bg-emerald-100 px-3 py-1 text-sm font-black text-emerald-700">
-                    Live
+                    {t.liveTag}
                   </span>
                 </div>
 
                 <div className="mt-5 grid gap-3 sm:grid-cols-3">
                   {[
-                    ["Responses", "248"],
-                    ["Completion", "86%"],
-                    ["AI insights", "12"],
+                    [t.responses, "248"],
+                    [t.completion, "86%"],
+                    [t.aiInsights, "12"],
                   ].map(([label, value]) => (
                     <div key={label} className="rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-100">
                       <p className="text-sm font-semibold text-slate-500">{label}</p>
@@ -171,17 +165,17 @@ export default function Home() {
 
                 <div className="mt-4 rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-100">
                   <div className="mb-5 flex items-center justify-between">
-                    <p className="font-black">Feedback signals</p>
+                    <p className="font-black">{t.feedbackSignals}</p>
                     <p className="rounded-full bg-blue-50 px-3 py-1 text-sm font-black text-blue-700">
-                      AI summary
+                      {t.aiSummary}
                     </p>
                   </div>
 
                   <div className="space-y-5">
                     {[
-                      ["Assessment clarity", "78%", "w-[78%]", "bg-blue-500"],
-                      ["Feedback quality", "64%", "w-[64%]", "bg-violet-500"],
-                      ["Learning support", "52%", "w-[52%]", "bg-emerald-500"],
+                      [lang === "ar" ? "وضوح التقييم" : "Assessment clarity", "78%", "w-[78%]", "bg-blue-500"],
+                      [lang === "ar" ? "جودة التغذية الراجعة" : "Feedback quality", "64%", "w-[64%]", "bg-violet-500"],
+                      [lang === "ar" ? "دعم التعلم" : "Learning support", "52%", "w-[52%]", "bg-emerald-500"],
                     ].map(([label, value, width, color]) => (
                       <div key={label}>
                         <div className="mb-2 flex justify-between text-sm font-bold">
@@ -197,11 +191,8 @@ export default function Home() {
                 </div>
 
                 <div className="mt-4 rounded-3xl border border-blue-100 bg-gradient-to-br from-blue-50 to-violet-50 p-5">
-                  <p className="text-sm font-black text-blue-700">AI interpretation</p>
-                  <p className="mt-2 leading-7 text-slate-700">
-                    The responses suggest that users need clearer criteria, faster
-                    feedback, and practical recommendations for improvement.
-                  </p>
+                  <p className="text-sm font-black text-blue-700">{t.aiInterpretation}</p>
+                  <p className="mt-2 leading-7 text-slate-700">{t.aiInterpretationText}</p>
                 </div>
               </div>
             </div>
@@ -211,10 +202,10 @@ export default function Home() {
         <section id="features" className="py-24">
           <div className="mx-auto max-w-3xl text-center">
             <p className="text-sm font-black uppercase tracking-[0.35em] text-blue-200">
-              Platform
+              {t.platformLabel}
             </p>
             <h2 className="mt-5 text-4xl font-black tracking-[-0.03em] md:text-6xl">
-              One place to create, collect, analyse, and report.
+              {t.featuresTitle}
             </h2>
           </div>
 
@@ -236,20 +227,18 @@ export default function Home() {
           <div className="rounded-[3rem] border border-white/10 bg-white/[0.05] p-8 backdrop-blur md:p-12">
             <div className="max-w-3xl">
               <p className="text-sm font-black uppercase tracking-[0.35em] text-emerald-200">
-                Use cases
+                {t.useCasesLabel}
               </p>
               <h2 className="mt-5 text-4xl font-black tracking-[-0.03em] md:text-6xl">
-                Made for people who need answers, not just forms.
+                {t.useCasesTitle}
               </h2>
             </div>
 
             <div className="mt-12 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              {audiences.map((item) => (
+              {t.audiences.map((item) => (
                 <div key={item} className="rounded-[2rem] bg-[#080d1d] p-7 ring-1 ring-white/10">
                   <p className="text-2xl font-black">{item}</p>
-                  <p className="mt-3 leading-7 text-slate-400">
-                    Collect feedback, understand responses, and create clearer reports.
-                  </p>
+                  <p className="mt-3 leading-7 text-slate-400">{t.useCasesText}</p>
                 </div>
               ))}
             </div>
@@ -259,10 +248,10 @@ export default function Home() {
         <section id="pricing" className="py-24">
           <div className="mx-auto max-w-3xl text-center">
             <p className="text-sm font-black uppercase tracking-[0.35em] text-violet-200">
-              Pricing
+              {t.pricingLabel}
             </p>
             <h2 className="mt-5 text-4xl font-black tracking-[-0.03em] md:text-6xl">
-              Start free. Upgrade when you need more.
+              {t.pricingTitle}
             </h2>
           </div>
 

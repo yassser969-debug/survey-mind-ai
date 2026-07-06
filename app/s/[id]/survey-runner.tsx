@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useLang } from "@/lib/i18n-client";
 
 type Question = {
   id: string;
@@ -23,6 +24,7 @@ export default function SurveyRunner({
   survey: Survey;
   questions: Question[];
 }) {
+  const { t } = useLang();
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -76,11 +78,8 @@ export default function SurveyRunner({
               <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-3xl">
                 ✓
               </div>
-              <h1 className="text-3xl font-black tracking-tight">Thank you!</h1>
-              <p className="mt-3 text-slate-500">
-                Your response has been recorded. The team will review it as part of the AI
-                analysis for this survey.
-              </p>
+              <h1 className="text-3xl font-black tracking-tight">{t.thankYou}</h1>
+              <p className="mt-3 text-slate-500">{t.responseRecorded}</p>
             </div>
           ) : (
             <form onSubmit={handleSubmit}>
@@ -166,7 +165,7 @@ export default function SurveyRunner({
                 disabled={submitting}
                 className="mt-9 w-full rounded-full bg-slate-950 py-4 text-sm font-black text-white transition hover:bg-slate-800 disabled:opacity-60"
               >
-                {submitting ? "Submitting…" : "Submit response"}
+                {submitting ? t.submitting : t.submitResponse}
               </button>
             </form>
           )}

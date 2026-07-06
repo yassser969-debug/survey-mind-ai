@@ -14,10 +14,23 @@ if (process.env.NODE_ENV !== "production") {
   globalForDb.db = db;
 }
 
-db.exec("PRAGMA journal_mode = WAL;");
-db.exec("PRAGMA busy_timeout = 5000;");
+function execWithRetry(sql: string) {
+  const deadline = Date.now() + 10000;
+  for (;;) {
+    try {
+      db.exec(sql);
+      return;
+    } catch (error) {
+      const isBusy = error instanceof Error && /database is locked|SQLITE_BUSY/i.test(error.message);
+      if (!isBusy || Date.now() > deadline) throw error;
+    }
+  }
+}
 
-db.exec(`
+db.exec("PRAGMA busy_timeout = 10000;");
+execWithRetry("PRAGMA journal_mode = WAL;");
+
+execWithRetry(`
   CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY,
     email TEXT UNIQUE NOT NULL,

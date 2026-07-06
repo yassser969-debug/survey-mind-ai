@@ -33,6 +33,7 @@ export const translations = {
     useCasesText: "Collect feedback, understand responses, and create clearer reports.",
     pricingLabel: "Pricing",
     pricingTitle: "Start free. Upgrade when you need more.",
+    mostPopular: "Most popular",
     featureTitles: [
       "Build smarter surveys",
       "Collect responses easily",
@@ -164,6 +165,7 @@ export const translations = {
     useCasesText: "اجمع التغذية الراجعة، وافهم الردود، وأنشئ تقارير أوضح.",
     pricingLabel: "الأسعار",
     pricingTitle: "ابدأ مجانًا. قم بالترقية عندما تحتاج المزيد.",
+    mostPopular: "الأكثر شيوعًا",
     featureTitles: [
       "أنشئ استبيانات أذكى",
       "اجمع الردود بسهولة",

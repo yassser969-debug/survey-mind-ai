@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 type QuestionType = "short" | "long" | "choice" | "rating";
@@ -29,9 +30,43 @@ function newQuestion(): Question {
 }
 
 export default function SurveyBuilderPage() {
+  const router = useRouter();
   const [title, setTitle] = useState("Untitled survey");
   const [description, setDescription] = useState("");
   const [questions, setQuestions] = useState<Question[]>([newQuestion()]);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  async function handlePublish() {
+    setError("");
+    setSaving(true);
+
+    try {
+      const res = await fetch("/api/surveys", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title,
+          description,
+          questions: questions.map(({ text, type, options }) => ({ text, type, options })),
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error ?? "Could not publish the survey.");
+        setSaving(false);
+        return;
+      }
+
+      router.push("/dashboard");
+      router.refresh();
+    } catch {
+      setError("Could not reach the server. Please try again.");
+      setSaving(false);
+    }
+  }
 
   function updateQuestion(id: string, patch: Partial<Question>) {
     setQuestions((prev) => prev.map((q) => (q.id === id ? { ...q, ...patch } : q)));
@@ -82,13 +117,15 @@ export default function SurveyBuilderPage() {
           </p>
           <h1 className="mt-3 text-4xl font-black tracking-tight md:text-5xl">Build your survey.</h1>
         </div>
-        <div className="flex gap-3">
-          <button className="rounded-full border border-white/10 bg-white/[0.05] px-6 py-3 text-sm font-bold text-slate-200 hover:border-white/25">
-            Save draft
+        <div className="flex flex-col items-end gap-2">
+          <button
+            onClick={handlePublish}
+            disabled={saving}
+            className="rounded-full bg-gradient-to-r from-blue-500 via-violet-500 to-blue-500 px-6 py-3 text-sm font-black shadow-lg shadow-blue-500/25 transition hover:scale-[1.02] disabled:opacity-60"
+          >
+            {saving ? "Publishing…" : "Publish"}
           </button>
-          <button className="rounded-full bg-gradient-to-r from-blue-500 via-violet-500 to-blue-500 px-6 py-3 text-sm font-black shadow-lg shadow-blue-500/25 transition hover:scale-[1.02]">
-            Publish
-          </button>
+          {error && <p className="text-sm font-semibold text-red-300">{error}</p>}
         </div>
       </div>
 

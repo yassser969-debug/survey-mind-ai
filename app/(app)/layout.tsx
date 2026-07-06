@@ -1,4 +1,7 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { getSession } from "@/lib/auth";
+import LogoutButton from "./logout-button";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: "▦" },
@@ -7,7 +10,10 @@ const navItems = [
   { href: "/dashboard", label: "AI insights", icon: "✦" },
 ];
 
-export default function AppLayout({ children }: { children: React.ReactNode }) {
+export default async function AppLayout({ children }: { children: React.ReactNode }) {
+  const user = await getSession();
+  if (!user) redirect("/login");
+
   return (
     <div className="min-h-screen bg-[#050712] text-white">
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
@@ -46,6 +52,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           >
             + New survey
           </Link>
+
+          <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+            <p className="truncate text-sm font-bold">{user.name}</p>
+            <p className="truncate text-xs text-slate-400">{user.email}</p>
+            <LogoutButton />
+          </div>
         </aside>
 
         <main className="min-w-0 flex-1 px-6 py-8 md:px-10 md:py-10">{children}</main>

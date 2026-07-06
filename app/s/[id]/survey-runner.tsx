@@ -3,27 +3,62 @@
 import { useState } from "react";
 
 type Question = {
+  id: string;
   text: string;
   type: "short" | "long" | "choice" | "rating";
-  options?: string[];
+  options: string[];
 };
 
 type Survey = {
   title: string;
   description: string;
-  questions: Question[];
 };
 
-export default function SurveyRunner({ survey }: { survey: Survey }) {
-  const [answers, setAnswers] = useState<Record<number, string>>({});
+export default function SurveyRunner({
+  surveyId,
+  survey,
+  questions,
+}: {
+  surveyId: string;
+  survey: Survey;
+  questions: Question[];
+}) {
+  const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
-  function setAnswer(index: number, value: string) {
-    setAnswers((prev) => ({ ...prev, [index]: value }));
+  function setAnswer(questionId: string, value: string) {
+    setAnswers((prev) => ({ ...prev, [questionId]: value }));
   }
 
   const answeredCount = Object.values(answers).filter(Boolean).length;
-  const progress = Math.round((answeredCount / survey.questions.length) * 100);
+  const progress = questions.length ? Math.round((answeredCount / questions.length) * 100) : 0;
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    setSubmitting(true);
+
+    try {
+      const res = await fetch(`/api/surveys/${surveyId}/responses`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ answers }),
+      });
+
+      if (!res.ok) {
+        setError("Could not submit your response. Please try again.");
+        setSubmitting(false);
+        return;
+      }
+
+      setSubmitted(true);
+    } catch {
+      setError("Could not reach the server. Please try again.");
+      setSubmitting(false);
+    }
+  }
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-[#050712] px-4 py-12">
@@ -48,12 +83,7 @@ export default function SurveyRunner({ survey }: { survey: Survey }) {
               </p>
             </div>
           ) : (
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                setSubmitted(true);
-              }}
-            >
+            <form onSubmit={handleSubmit}>
               <h1 className="text-3xl font-black tracking-tight">{survey.title}</h1>
               <p className="mt-2 text-slate-500">{survey.description}</p>
 
@@ -65,8 +95,8 @@ export default function SurveyRunner({ survey }: { survey: Survey }) {
               </div>
 
               <div className="mt-8 space-y-7">
-                {survey.questions.map((question, index) => (
-                  <div key={index}>
+                {questions.map((question, index) => (
+                  <div key={question.id}>
                     <p className="font-bold">
                       {index + 1}. {question.text}
                     </p>
@@ -75,19 +105,19 @@ export default function SurveyRunner({ survey }: { survey: Survey }) {
                       <textarea
                         required
                         rows={question.type === "long" ? 4 : 1}
-                        value={answers[index] ?? ""}
-                        onChange={(e) => setAnswer(index, e.target.value)}
+                        value={answers[question.id] ?? ""}
+                        onChange={(e) => setAnswer(question.id, e.target.value)}
                         className="mt-3 w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-blue-400"
                       />
                     )}
 
                     {question.type === "choice" && (
                       <div className="mt-3 space-y-2">
-                        {question.options?.map((option) => (
+                        {question.options.map((option) => (
                           <label
                             key={option}
                             className={`flex cursor-pointer items-center gap-3 rounded-2xl border px-4 py-3 transition ${
-                              answers[index] === option
+                              answers[question.id] === option
                                 ? "border-blue-400 bg-blue-50"
                                 : "border-slate-200 hover:border-slate-300"
                             }`}
@@ -95,10 +125,10 @@ export default function SurveyRunner({ survey }: { survey: Survey }) {
                             <input
                               type="radio"
                               required
-                              name={`q-${index}`}
+                              name={question.id}
                               value={option}
-                              checked={answers[index] === option}
-                              onChange={(e) => setAnswer(index, e.target.value)}
+                              checked={answers[question.id] === option}
+                              onChange={(e) => setAnswer(question.id, e.target.value)}
                               className="h-4 w-4"
                             />
                             {option}
@@ -113,9 +143,9 @@ export default function SurveyRunner({ survey }: { survey: Survey }) {
                           <button
                             type="button"
                             key={n}
-                            onClick={() => setAnswer(index, String(n))}
+                            onClick={() => setAnswer(question.id, String(n))}
                             className={`flex h-12 w-12 items-center justify-center rounded-xl text-lg font-black transition ${
-                              answers[index] === String(n)
+                              answers[question.id] === String(n)
                                 ? "bg-slate-950 text-white"
                                 : "bg-slate-100 text-slate-500 hover:bg-slate-200"
                             }`}
@@ -129,11 +159,14 @@ export default function SurveyRunner({ survey }: { survey: Survey }) {
                 ))}
               </div>
 
+              {error && <p className="mt-6 text-sm font-semibold text-red-500">{error}</p>}
+
               <button
                 type="submit"
-                className="mt-9 w-full rounded-full bg-slate-950 py-4 text-sm font-black text-white transition hover:bg-slate-800"
+                disabled={submitting}
+                className="mt-9 w-full rounded-full bg-slate-950 py-4 text-sm font-black text-white transition hover:bg-slate-800 disabled:opacity-60"
               >
-                Submit response
+                {submitting ? "Submitting…" : "Submit response"}
               </button>
             </form>
           )}

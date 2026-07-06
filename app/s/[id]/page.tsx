@@ -1,47 +1,20 @@
+import { getSurvey } from "@/lib/surveys";
 import SurveyRunner from "./survey-runner";
-
-const surveys: Record<
-  string,
-  {
-    title: string;
-    description: string;
-    questions: { text: string; type: "short" | "long" | "choice" | "rating"; options?: string[] }[];
-  }
-> = {
-  "quality-feedback-review": {
-    title: "Quality Feedback Review",
-    description: "Help us understand how clear and useful our feedback process has been for you.",
-    questions: [
-      { text: "How clear were the assessment criteria?", type: "rating" },
-      {
-        text: "Which area needs the most improvement?",
-        type: "choice",
-        options: ["Clarity", "Speed of feedback", "Learning support", "Communication"],
-      },
-      { text: "What would make the feedback process better for you?", type: "long" },
-    ],
-  },
-  "course-experience-survey": {
-    title: "Course Experience Survey",
-    description: "A quick survey about your experience in this course.",
-    questions: [
-      { text: "Your name (optional)", type: "short" },
-      { text: "How would you rate the course overall?", type: "rating" },
-      { text: "What did you enjoy most?", type: "long" },
-    ],
-  },
-};
 
 export default async function TakeSurveyPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const survey = surveys[id] ?? {
-    title: "Sample Survey",
-    description: "This survey preview uses sample questions.",
-    questions: [
-      { text: "How satisfied are you overall?", type: "rating" as const },
-      { text: "What could we do better?", type: "long" as const },
-    ],
-  };
+  const result = getSurvey(id);
 
-  return <SurveyRunner survey={survey} />;
+  if (!result) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#050712] px-4 text-center text-white">
+        <div>
+          <h1 className="text-2xl font-black">Survey not found</h1>
+          <p className="mt-2 text-slate-400">This survey may have been removed or the link is incorrect.</p>
+        </div>
+      </main>
+    );
+  }
+
+  return <SurveyRunner surveyId={id} survey={result.survey} questions={result.questions} />;
 }

@@ -1,54 +1,30 @@
 import Link from "next/link";
-
-const stats = [
-  { label: "Active surveys", value: "6" },
-  { label: "Total responses", value: "1,248" },
-  { label: "Avg. completion", value: "82%" },
-  { label: "AI analyses run", value: "34" },
-];
-
-const surveys = [
-  {
-    id: "quality-feedback-review",
-    name: "Quality Feedback Review",
-    status: "Live",
-    responses: 248,
-    completion: "86%",
-    updated: "2h ago",
-  },
-  {
-    id: "course-experience-survey",
-    name: "Course Experience Survey",
-    status: "Live",
-    responses: 512,
-    completion: "79%",
-    updated: "1d ago",
-  },
-  {
-    id: "staff-wellbeing-check",
-    name: "Staff Wellbeing Check",
-    status: "Draft",
-    responses: 0,
-    completion: "—",
-    updated: "3d ago",
-  },
-  {
-    id: "research-participant-intake",
-    name: "Research Participant Intake",
-    status: "Closed",
-    responses: 488,
-    completion: "94%",
-    updated: "1w ago",
-  },
-];
+import { getSession } from "@/lib/auth";
+import { listSurveysForUser } from "@/lib/surveys";
 
 const statusStyles: Record<string, string> = {
-  Live: "bg-emerald-100 text-emerald-700",
-  Draft: "bg-amber-100 text-amber-700",
-  Closed: "bg-slate-200 text-slate-600",
+  live: "bg-emerald-100 text-emerald-700",
+  draft: "bg-amber-100 text-amber-700",
+  closed: "bg-slate-200 text-slate-600",
 };
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const user = await getSession();
+  const surveys = user ? listSurveysForUser(user.id) : [];
+
+  const totalResponses = surveys.reduce((sum, s) => sum + s.responseCount, 0);
+  const liveCount = surveys.filter((s) => s.status === "live").length;
+  const avgCompletion = surveys.length
+    ? Math.round(surveys.reduce((sum, s) => sum + s.completion, 0) / surveys.length)
+    : 0;
+
+  const stats = [
+    { label: "Active surveys", value: String(liveCount) },
+    { label: "Total responses", value: totalResponses.toLocaleString() },
+    { label: "Avg. completion", value: `${avgCompletion}%` },
+    { label: "Surveys created", value: String(surveys.length) },
+  ];
+
   return (
     <div className="mx-auto max-w-6xl">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -57,7 +33,7 @@ export default function DashboardPage() {
             Workspace
           </p>
           <h1 className="mt-3 text-4xl font-black tracking-tight md:text-5xl">
-            Good to see you back.
+            Good to see you back{user ? `, ${user.name.split(" ")[0]}` : ""}.
           </h1>
           <p className="mt-2 text-slate-400">
             Here&apos;s what&apos;s happening across your surveys today.
@@ -87,38 +63,56 @@ export default function DashboardPage() {
         <div className="flex items-center justify-between border-b border-white/10 p-6">
           <h2 className="text-xl font-black">Your surveys</h2>
           <Link href="/surveys/new" className="text-sm font-bold text-blue-300 hover:text-blue-200">
-            View all
+            + New survey
           </Link>
         </div>
 
-        <div className="divide-y divide-white/5">
-          {surveys.map((survey) => (
-            <Link
-              key={survey.id}
-              href={`/s/${survey.id}`}
-              className="flex flex-col gap-4 p-6 transition hover:bg-white/[0.04] sm:flex-row sm:items-center sm:justify-between"
-            >
-              <div>
-                <p className="font-bold">{survey.name}</p>
-                <p className="mt-1 text-sm text-slate-400">Updated {survey.updated}</p>
-              </div>
-
-              <div className="flex items-center gap-6 text-sm">
-                <span className={`rounded-full px-3 py-1 font-black ${statusStyles[survey.status]}`}>
-                  {survey.status}
-                </span>
-                <div className="text-right">
-                  <p className="font-black">{survey.responses}</p>
-                  <p className="text-slate-400">responses</p>
-                </div>
-                <div className="text-right">
-                  <p className="font-black">{survey.completion}</p>
-                  <p className="text-slate-400">completion</p>
-                </div>
-              </div>
+        {surveys.length === 0 ? (
+          <div className="p-10 text-center text-slate-400">
+            <p>You haven&apos;t created any surveys yet.</p>
+            <Link href="/surveys/new" className="mt-3 inline-block font-bold text-blue-300 hover:text-blue-200">
+              Build your first survey →
             </Link>
-          ))}
-        </div>
+          </div>
+        ) : (
+          <div className="divide-y divide-white/5">
+            {surveys.map((survey) => (
+              <div
+                key={survey.id}
+                className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div>
+                  <Link href={`/s/${survey.id}`} className="font-bold hover:text-blue-300">
+                    {survey.title}
+                  </Link>
+                  <p className="mt-1 text-sm text-slate-400">
+                    Updated {new Date(survey.updatedAt).toLocaleDateString()}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-6 text-sm">
+                  <span className={`rounded-full px-3 py-1 font-black ${statusStyles[survey.status]}`}>
+                    {survey.status}
+                  </span>
+                  <div className="text-right">
+                    <p className="font-black">{survey.responseCount}</p>
+                    <p className="text-slate-400">responses</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-black">{survey.completion}%</p>
+                    <p className="text-slate-400">completion</p>
+                  </div>
+                  <Link
+                    href={`/surveys/${survey.id}/insights`}
+                    className="rounded-full border border-white/10 px-4 py-2 font-bold text-slate-200 hover:border-blue-400/40 hover:text-white"
+                  >
+                    AI insights
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

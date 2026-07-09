@@ -18,13 +18,13 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   if (!user) return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
 
   const { id } = await params;
-  const result = getSurvey(id);
+  const result = await getSurvey(id);
   if (!result || result.survey.userId !== user.id) {
     return NextResponse.json({ error: "Survey not found." }, { status: 404 });
   }
 
   const format = request.nextUrl.searchParams.get("format") ?? "csv";
-  const responses = getResponses(id);
+  const responses = await getResponses(id);
   const header = ["Submitted at", ...result.questions.map((q) => q.text)];
   const rows = responses.map((response) => {
     const answerByQuestion = new Map(response.answers.map((a) => [a.questionId, a.value]));

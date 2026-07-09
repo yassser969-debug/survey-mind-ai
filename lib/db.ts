@@ -1,86 +1,84 @@
-import { DatabaseSync } from "node:sqlite";
-import fs from "node:fs";
-import path from "node:path";
+import postgres from "postgres";
 
-const dataDir = path.join(process.cwd(), "data");
-fs.mkdirSync(dataDir, { recursive: true });
+if (!process.env.DATABASE_URL) {
+  throw new Error(
+    "DATABASE_URL must be set — connect a Supabase (or other Postgres) database to this project.",
+  );
+}
 
-const globalForDb = globalThis as unknown as { db?: DatabaseSync };
+const globalForDb = globalThis as unknown as { sql?: postgres.Sql };
 
-export const db =
-  globalForDb.db ?? new DatabaseSync(path.join(dataDir, "app.db"));
+export const sql = globalForDb.sql ?? postgres(process.env.DATABASE_URL, { ssl: "prefer" });
 
 if (process.env.NODE_ENV !== "production") {
-  globalForDb.db = db;
+  globalForDb.sql = sql;
 }
 
-function execWithRetry(sql: string) {
-  const deadline = Date.now() + 10000;
-  for (;;) {
-    try {
-      db.exec(sql);
-      return;
-    } catch (error) {
-      const isBusy = error instanceof Error && /database is locked|SQLITE_BUSY/i.test(error.message);
-      if (!isBusy || Date.now() > deadline) throw error;
-    }
+let schemaReady: Promise<void> | null = null;
+
+export function ensureSchema(): Promise<void> {
+  if (!schemaReady) {
+    schemaReady = (async () => {
+      await sql`
+        CREATE TABLE IF NOT EXISTS users (
+          id TEXT PRIMARY KEY,
+          email TEXT UNIQUE NOT NULL,
+          name TEXT NOT NULL,
+          password_hash TEXT NOT NULL,
+          created_at TEXT NOT NULL
+        )
+      `;
+
+      await sql`
+        CREATE TABLE IF NOT EXISTS surveys (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NOT NULL REFERENCES users(id),
+          title TEXT NOT NULL,
+          description TEXT NOT NULL DEFAULT '',
+          status TEXT NOT NULL DEFAULT 'live',
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL
+        )
+      `;
+
+      await sql`
+        CREATE TABLE IF NOT EXISTS questions (
+          id TEXT PRIMARY KEY,
+          survey_id TEXT NOT NULL REFERENCES surveys(id),
+          text TEXT NOT NULL,
+          type TEXT NOT NULL,
+          options TEXT NOT NULL DEFAULT '[]',
+          position INTEGER NOT NULL
+        )
+      `;
+
+      await sql`
+        CREATE TABLE IF NOT EXISTS responses (
+          id TEXT PRIMARY KEY,
+          survey_id TEXT NOT NULL REFERENCES surveys(id),
+          created_at TEXT NOT NULL
+        )
+      `;
+
+      await sql`
+        CREATE TABLE IF NOT EXISTS answers (
+          id TEXT PRIMARY KEY,
+          response_id TEXT NOT NULL REFERENCES responses(id),
+          question_id TEXT NOT NULL REFERENCES questions(id),
+          value TEXT NOT NULL
+        )
+      `;
+
+      await sql`
+        CREATE TABLE IF NOT EXISTS password_resets (
+          token TEXT PRIMARY KEY,
+          user_id TEXT NOT NULL REFERENCES users(id),
+          expires_at TEXT NOT NULL,
+          used INTEGER NOT NULL DEFAULT 0
+        )
+      `;
+    })();
   }
+
+  return schemaReady;
 }
-
-db.exec("PRAGMA busy_timeout = 10000;");
-execWithRetry("PRAGMA journal_mode = WAL;");
-
-execWithRetry(`
-  CREATE TABLE IF NOT EXISTS users (
-    id TEXT PRIMARY KEY,
-    email TEXT UNIQUE NOT NULL,
-    name TEXT NOT NULL,
-    password_hash TEXT NOT NULL,
-    created_at TEXT NOT NULL
-  );
-
-  CREATE TABLE IF NOT EXISTS surveys (
-    id TEXT PRIMARY KEY,
-    user_id TEXT NOT NULL,
-    title TEXT NOT NULL,
-    description TEXT NOT NULL DEFAULT '',
-    status TEXT NOT NULL DEFAULT 'live',
-    created_at TEXT NOT NULL,
-    updated_at TEXT NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES users(id)
-  );
-
-  CREATE TABLE IF NOT EXISTS questions (
-    id TEXT PRIMARY KEY,
-    survey_id TEXT NOT NULL,
-    text TEXT NOT NULL,
-    type TEXT NOT NULL,
-    options TEXT NOT NULL DEFAULT '[]',
-    position INTEGER NOT NULL,
-    FOREIGN KEY (survey_id) REFERENCES surveys(id)
-  );
-
-  CREATE TABLE IF NOT EXISTS responses (
-    id TEXT PRIMARY KEY,
-    survey_id TEXT NOT NULL,
-    created_at TEXT NOT NULL,
-    FOREIGN KEY (survey_id) REFERENCES surveys(id)
-  );
-
-  CREATE TABLE IF NOT EXISTS answers (
-    id TEXT PRIMARY KEY,
-    response_id TEXT NOT NULL,
-    question_id TEXT NOT NULL,
-    value TEXT NOT NULL,
-    FOREIGN KEY (response_id) REFERENCES responses(id),
-    FOREIGN KEY (question_id) REFERENCES questions(id)
-  );
-
-  CREATE TABLE IF NOT EXISTS password_resets (
-    token TEXT PRIMARY KEY,
-    user_id TEXT NOT NULL,
-    expires_at TEXT NOT NULL,
-    used INTEGER NOT NULL DEFAULT 0,
-    FOREIGN KEY (user_id) REFERENCES users(id)
-  );
-`);

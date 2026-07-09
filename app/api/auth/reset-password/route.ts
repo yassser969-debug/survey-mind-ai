@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const ok = resetPassword(token, password);
+  const ok = await resetPassword(token, password);
   if (!ok) {
     return NextResponse.json(
       { error: "This reset link is invalid or has expired." },

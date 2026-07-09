@@ -11,7 +11,7 @@ const statusStyles: Record<string, string> = {
 
 export default async function DashboardPage() {
   const user = await getSession();
-  const surveys = user ? listSurveysForUser(user.id) : [];
+  const surveys = user ? await listSurveysForUser(user.id) : [];
   const lang = await getLang();
   const t = getDict(lang);
 

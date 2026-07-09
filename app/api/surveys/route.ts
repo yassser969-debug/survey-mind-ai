@@ -6,7 +6,7 @@ export async function GET() {
   const user = await getSession();
   if (!user) return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
 
-  return NextResponse.json({ surveys: listSurveysForUser(user.id) });
+  return NextResponse.json({ surveys: await listSurveysForUser(user.id) });
 }
 
 export async function POST(request: NextRequest) {
@@ -22,6 +22,6 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const id = createSurvey(user.id, title, description ?? "", questions);
+  const id = await createSurvey(user.id, title, description ?? "", questions);
   return NextResponse.json({ id });
 }

@@ -8,12 +8,12 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
   if (!user) return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
 
   const { id } = await params;
-  const result = getSurvey(id);
+  const result = await getSurvey(id);
   if (!result || result.survey.userId !== user.id) {
     return NextResponse.json({ error: "Survey not found." }, { status: 404 });
   }
 
-  const responses = getResponses(id);
+  const responses = await getResponses(id);
   if (responses.length === 0) {
     return NextResponse.json({ error: "This survey has no responses yet." }, { status: 400 });
   }

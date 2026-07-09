@@ -3,7 +3,7 @@ import SurveyRunner from "./survey-runner";
 
 export default async function TakeSurveyPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const result = getSurvey(id);
+  const result = await getSurvey(id);
 
   if (!result) {
     return (

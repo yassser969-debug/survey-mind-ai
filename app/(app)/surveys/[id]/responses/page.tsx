@@ -13,14 +13,14 @@ export default async function SurveyResponsesPage({
   if (!user) redirect("/login");
 
   const { id } = await params;
-  const result = getSurvey(id);
+  const result = await getSurvey(id);
   if (!result || result.survey.userId !== user.id) {
     redirect("/dashboard");
   }
 
   const lang = await getLang();
   const t = getDict(lang);
-  const responses = getResponses(id);
+  const responses = await getResponses(id);
   const questionById = new Map(result.questions.map((q) => [q.id, q.text]));
 
   return (

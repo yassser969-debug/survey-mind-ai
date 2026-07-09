@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const user = createUser(email, name, password);
+    const user = await createUser(email, name, password);
     await setSession(user);
     return NextResponse.json({ user });
   } catch (error) {

@@ -4,7 +4,7 @@ import { verifyCredentials, setSession } from "@/lib/auth";
 export async function POST(request: NextRequest) {
   const { email, password } = await request.json();
 
-  const user = verifyCredentials(email ?? "", password ?? "");
+  const user = await verifyCredentials(email ?? "", password ?? "");
   if (!user) {
     return NextResponse.json({ error: "Invalid email or password." }, { status: 401 });
   }

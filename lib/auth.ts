@@ -1,6 +1,6 @@
 import { randomUUID, randomBytes, scryptSync, timingSafeEqual, createHmac } from "node:crypto";
 import { cookies } from "next/headers";
-import { db } from "./db";
+import { ensureSchema, sql } from "./db";
 
 const SESSION_COOKIE = "session";
 
@@ -47,22 +47,27 @@ function unsign(token: string): string | null {
   return value;
 }
 
-export function createUser(email: string, name: string, password: string): User {
-  const existing = db.prepare(`SELECT id FROM users WHERE email = ?`).get(email);
+export async function createUser(email: string, name: string, password: string): Promise<User> {
+  await ensureSchema();
+
+  const [existing] = await sql`SELECT id FROM users WHERE email = ${email}`;
   if (existing) throw new Error("An account with this email already exists.");
 
   const id = randomUUID();
-  db.prepare(
-    `INSERT INTO users (id, email, name, password_hash, created_at) VALUES (?, ?, ?, ?, ?)`,
-  ).run(id, email, name, hashPassword(password), new Date().toISOString());
+  await sql`
+    INSERT INTO users (id, email, name, password_hash, created_at)
+    VALUES (${id}, ${email}, ${name}, ${hashPassword(password)}, ${new Date().toISOString()})
+  `;
 
   return { id, email, name };
 }
 
-export function verifyCredentials(email: string, password: string): User | null {
-  const row = db
-    .prepare(`SELECT id, email, name, password_hash as passwordHash FROM users WHERE email = ?`)
-    .get(email) as (User & { passwordHash: string }) | undefined;
+export async function verifyCredentials(email: string, password: string): Promise<User | null> {
+  await ensureSchema();
+
+  const [row] = await sql<{ id: string; email: string; name: string; passwordHash: string }[]>`
+    SELECT id, email, name, password_hash as "passwordHash" FROM users WHERE email = ${email}
+  `;
 
   if (!row || !verifyPassword(password, row.passwordHash)) return null;
 
@@ -87,36 +92,34 @@ export async function clearSession() {
 
 const RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
 
-export function createPasswordResetToken(email: string): string | null {
-  const user = db.prepare(`SELECT id FROM users WHERE email = ?`).get(email) as
-    | { id: string }
-    | undefined;
+export async function createPasswordResetToken(email: string): Promise<string | null> {
+  await ensureSchema();
+
+  const [user] = await sql<{ id: string }[]>`SELECT id FROM users WHERE email = ${email}`;
   if (!user) return null;
 
   const token = randomBytes(32).toString("hex");
   const expiresAt = new Date(Date.now() + RESET_TOKEN_TTL_MS).toISOString();
 
-  db.prepare(`INSERT INTO password_resets (token, user_id, expires_at, used) VALUES (?, ?, ?, 0)`).run(
-    token,
-    user.id,
-    expiresAt,
-  );
+  await sql`
+    INSERT INTO password_resets (token, user_id, expires_at, used)
+    VALUES (${token}, ${user.id}, ${expiresAt}, 0)
+  `;
 
   return token;
 }
 
-export function resetPassword(token: string, newPassword: string): boolean {
-  const row = db
-    .prepare(`SELECT user_id as userId, expires_at as expiresAt, used FROM password_resets WHERE token = ?`)
-    .get(token) as { userId: string; expiresAt: string; used: number } | undefined;
+export async function resetPassword(token: string, newPassword: string): Promise<boolean> {
+  await ensureSchema();
+
+  const [row] = await sql<{ userId: string; expiresAt: string; used: number }[]>`
+    SELECT user_id as "userId", expires_at as "expiresAt", used FROM password_resets WHERE token = ${token}
+  `;
 
   if (!row || row.used || new Date(row.expiresAt).getTime() < Date.now()) return false;
 
-  db.prepare(`UPDATE users SET password_hash = ? WHERE id = ?`).run(
-    hashPassword(newPassword),
-    row.userId,
-  );
-  db.prepare(`UPDATE password_resets SET used = 1 WHERE token = ?`).run(token);
+  await sql`UPDATE users SET password_hash = ${hashPassword(newPassword)} WHERE id = ${row.userId}`;
+  await sql`UPDATE password_resets SET used = 1 WHERE token = ${token}`;
 
   return true;
 }

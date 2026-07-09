@@ -3,7 +3,7 @@ import { createPasswordResetToken } from "@/lib/auth";
 
 export async function POST(request: NextRequest) {
   const { email } = await request.json();
-  const token = createPasswordResetToken(email ?? "");
+  const token = await createPasswordResetToken(email ?? "");
 
   // No email service is configured in this environment, so the reset link
   // is logged server-side for the operator to relay manually instead of

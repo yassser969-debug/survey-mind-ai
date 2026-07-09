@@ -7,7 +7,6 @@ import { useLang } from "@/lib/i18n-client";
 export default function ForgotPasswordPage() {
   const { t } = useLang();
   const [email, setEmail] = useState("");
-  const [resetUrl, setResetUrl] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -15,14 +14,12 @@ export default function ForgotPasswordPage() {
     e.preventDefault();
     setLoading(true);
 
-    const res = await fetch("/api/auth/forgot-password", {
+    await fetch("/api/auth/forgot-password", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email }),
     });
-    const data = await res.json();
 
-    setResetUrl(data.resetUrl);
     setSubmitted(true);
     setLoading(false);
   }
@@ -47,20 +44,7 @@ export default function ForgotPasswordPage() {
 
           {submitted ? (
             <div className="mt-8 space-y-4">
-              <p className="text-sm text-slate-300">
-                {t.ifAccountExists} <span className="font-bold">{email}</span>, {t.hereIsResetLink}
-              </p>
-              {resetUrl ? (
-                <Link
-                  href={resetUrl}
-                  className="block break-all rounded-2xl border border-blue-400/30 bg-blue-500/10 px-4 py-3 text-sm font-bold text-blue-200 hover:border-blue-400/60"
-                >
-                  {resetUrl}
-                </Link>
-              ) : (
-                <p className="text-sm text-slate-500">{t.noAccountFound}</p>
-              )}
-              <p className="text-xs text-slate-500">{t.noEmailServiceNote}</p>
+              <p className="text-sm text-slate-300">{t.resetRequestedMessage}</p>
             </div>
           ) : (
             <form className="mt-8 space-y-4" onSubmit={handleSubmit}>

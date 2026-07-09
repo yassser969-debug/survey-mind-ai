@@ -3,6 +3,13 @@ import { cookies } from "next/headers";
 import { db } from "./db";
 
 const SESSION_COOKIE = "session";
+
+if (process.env.NODE_ENV === "production" && !process.env.SESSION_SECRET) {
+  throw new Error(
+    "SESSION_SECRET must be set in production — refusing to sign sessions with a hardcoded fallback secret.",
+  );
+}
+
 const SESSION_SECRET = process.env.SESSION_SECRET ?? "dev-only-secret-change-in-production";
 
 export type User = { id: string; email: string; name: string };

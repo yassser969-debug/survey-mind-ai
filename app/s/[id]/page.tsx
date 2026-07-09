@@ -16,5 +16,9 @@ export default async function TakeSurveyPage({ params }: { params: Promise<{ id:
     );
   }
 
-  return <SurveyRunner surveyId={id} survey={result.survey} questions={result.questions} />;
+  // Only pass the fields the respondent-facing client component needs —
+  // the full DB row includes userId, which must not reach the browser.
+  const survey = { title: result.survey.title, description: result.survey.description };
+
+  return <SurveyRunner surveyId={id} survey={survey} questions={result.questions} />;
 }

@@ -126,11 +126,8 @@ export const translations = {
     setNewPassword: "Set a new password",
     newPassword: "New password",
     updatePassword: "Update password",
-    ifAccountExists: "If an account exists for",
-    hereIsResetLink: "here is your reset link:",
-    noAccountFound: "No account was found for that email.",
-    noEmailServiceNote:
-      "No email service is connected in this environment, so the link is shown here directly instead of being emailed.",
+    resetRequestedMessage:
+      "If an account exists for that email, a reset link has been generated. Since no email service is connected in this environment, ask the site administrator to retrieve it from the server logs.",
     passwordUpdated: "Password updated. Redirecting you to sign in…",
   },
   ar: {
@@ -258,11 +255,8 @@ export const translations = {
     setNewPassword: "عيّن كلمة مرور جديدة",
     newPassword: "كلمة المرور الجديدة",
     updatePassword: "تحديث كلمة المرور",
-    ifAccountExists: "إذا كان هناك حساب مرتبط بـ",
-    hereIsResetLink: "فهذا رابط إعادة التعيين الخاص بك:",
-    noAccountFound: "لم يتم العثور على حساب بهذا البريد الإلكتروني.",
-    noEmailServiceNote:
-      "لا توجد خدمة إرسال بريد إلكتروني متصلة في هذه البيئة، لذا يظهر الرابط هنا مباشرة بدلاً من إرساله.",
+    resetRequestedMessage:
+      "إذا كان هناك حساب مرتبط بهذا البريد، فقد تم إنشاء رابط لإعادة التعيين. بما أنه لا توجد خدمة بريد إلكتروني متصلة في هذه البيئة، يرجى التواصل مع مسؤول الموقع للحصول عليه من سجلات الخادم.",
     passwordUpdated: "تم تحديث كلمة المرور. جارٍ تحويلك لتسجيل الدخول…",
   },
 } as const;

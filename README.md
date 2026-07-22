@@ -56,7 +56,6 @@ app/
     branch/                 # Lecturer: student monitoring
     join/                   # Student: join a branch by code
     admin/                  # Founder panel
-  components/CursorGlow.tsx # Custom cursor + lighting
 lib/
   db.ts                     # SQLite schema + migrations
   auth.ts                   # Sessions, codes, passwords, founder seed

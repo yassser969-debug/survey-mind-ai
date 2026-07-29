@@ -23,7 +23,7 @@ npm run dev        # http://localhost:3000
 بدون أي إعداد إضافي: أكواد التوثيق تظهر على الشاشة (وضع التطوير)، والتحليل يعمل إحصائيًا.
 انسخ `.env.example` إلى `.env.local` لتفعيل الإرسال الحقيقي للإيميل (Resend) والتحليل الذكي (Anthropic).
 
-**حساب المؤسس الافتراضي:** `yassser969@gmail.com` / `admin12345` — غيّرهما عبر `ADMIN_EMAIL` و`ADMIN_PASSWORD`.
+**حساب المؤسس:** الإيميل الافتراضي `yassser969@gmail.com` (غيّره عبر `ADMIN_EMAIL`). في production، `ADMIN_PASSWORD` **إلزامي** — التطبيق يرفض العمل بدونه بدل استخدام كلمة مرور افتراضية.
 
 ## الأوامر / Scripts
 

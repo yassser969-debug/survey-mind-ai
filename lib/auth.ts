@@ -183,7 +183,8 @@ export const FOUNDER_EMAIL = (
 /**
  * Seeds the founder account (all features) once, and promotes the founder
  * email to admin if it already exists as a regular account. The password
- * comes from ADMIN_PASSWORD, with a local default for development.
+ * comes from ADMIN_PASSWORD — required in production so the founder
+ * account never ships with a guessable default.
  */
 export function ensureAdminAccount(): void {
   const db = getDb();
@@ -201,12 +202,19 @@ export function ensureAdminAccount(): void {
     return;
   }
 
+  const adminPassword = process.env.ADMIN_PASSWORD;
+  if (!adminPassword && process.env.NODE_ENV === "production") {
+    throw new Error(
+      "ADMIN_PASSWORD must be set in production — refusing to seed the founder account with a default password."
+    );
+  }
+
   db.prepare(
     `INSERT INTO users (name, email, password_hash, role, email_verified_at)
      VALUES (?, ?, ?, 'admin', datetime('now'))`
   ).run(
     "Founder",
     FOUNDER_EMAIL,
-    hashPassword(process.env.ADMIN_PASSWORD ?? "admin12345")
+    hashPassword(adminPassword ?? "admin12345")
   );
 }
